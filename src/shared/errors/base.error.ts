@@ -1,25 +1,26 @@
-export interface AppErrorOptions {
+// ============================================================================
+// RUTA: src/shared/errors/base.error.ts
+// ============================================================================
+
+export interface DedosErrorOptions {
   readonly code: string;
   readonly message: string;
-  readonly statusCode?: number;
   readonly cause?: unknown;
   readonly metadata?: Record<string, unknown>;
   readonly exposeMessage?: boolean;
 }
 
-export class AppError extends Error {
+export class DedosError extends Error {
   public readonly code: string;
-
-  public readonly statusCode: number;
 
   public readonly metadata: Record<string, unknown>;
 
   public readonly exposeMessage: boolean;
 
-  public constructor(options: AppErrorOptions) {
+  public constructor(options: DedosErrorOptions) {
     super(options.message);
+    this.name = 'DedosError';
     this.code = options.code;
-    this.statusCode = options.statusCode ?? 500;
     this.metadata = options.metadata ?? {};
     this.exposeMessage = options.exposeMessage ?? false;
 
@@ -27,8 +28,8 @@ export class AppError extends Error {
       this.cause = options.cause;
     }
 
-    Error.captureStackTrace?.(this, AppError);
+    Error.captureStackTrace?.(this, DedosError);
   }
 }
 
-export const isAppError = (error: unknown): error is AppError => error instanceof AppError;
+export const isDedosError = (value: unknown): value is DedosError => value instanceof DedosError;

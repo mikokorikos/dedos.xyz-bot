@@ -1,40 +1,122 @@
-import { Events, type Interaction } from 'discord.js';
+// ============================================================================
+// RUTA: src/presentation/events/interactionCreate.ts
+// ============================================================================
 
-import { commandRegistry } from '@/presentation/commands/command-registry';
+import type {
+  ButtonInteraction,
+  ChatInputCommandInteraction,
+  Interaction,
+  ModalSubmitInteraction,
+} from 'discord.js';
+import { Events } from 'discord.js';
+
+import { commandRegistry } from '@/presentation/commands';
+import { buttonHandlers, modalHandlers } from '@/presentation/components/registry';
+import { embedFactory } from '@/presentation/embeds/EmbedFactory';
+import type { EventDescriptor } from '@/presentation/events/types';
 import { mapErrorToDiscordResponse } from '@/shared/errors/discord-error-mapper';
 import { logger } from '@/shared/logger/pino';
 
-export const interactionCreateEvent = {
+const handleChatInput = async (interaction: ChatInputCommandInteraction): Promise<void> => {
+  const command = commandRegistry.get(interaction.commandName);
+
+  if (!command) {
+    logger.warn({ commandName: interaction.commandName }, 'Se intentó ejecutar un comando no registrado.');
+    await interaction.reply({
+      embeds: [
+        embedFactory.warning({
+          title: 'Comando no disponible',
+          description: 'El comando solicitado ya no está registrado. Usa `/help` para ver la lista actual.',
+        }),
+      ],
+      ephemeral: true,
+    });
+    return;
+  }
+
+  await command.execute(interaction);
+};
+
+const handleButton = async (interaction: ButtonInteraction): Promise<void> => {
+  const handler = buttonHandlers.get(interaction.customId);
+
+  if (!handler) {
+    logger.warn({ customId: interaction.customId }, 'No existe handler registrado para el botón.');
+    await interaction.reply({
+      embeds: [
+        embedFactory.warning({
+          title: 'Acción no disponible',
+          description:
+            'Este botón ya no está activo. Recarga la interfaz o ejecuta nuevamente el comando para obtener una versión actualizada.',
+        }),
+      ],
+      ephemeral: true,
+    });
+    return;
+  }
+
+  await handler(interaction);
+};
+
+const handleModal = async (interaction: ModalSubmitInteraction): Promise<void> => {
+  const handler = modalHandlers.get(interaction.customId);
+
+  if (!handler) {
+    logger.warn({ customId: interaction.customId }, 'No existe handler registrado para el modal.');
+    await interaction.reply({
+      embeds: [
+        embedFactory.warning({
+          title: 'Formulario expirado',
+          description: 'Este formulario ya no es válido. Intenta ejecutar nuevamente el flujo desde el comando original.',
+        }),
+      ],
+      ephemeral: true,
+    });
+    return;
+  }
+
+  await handler(interaction);
+};
+
+export const interactionCreateEvent: EventDescriptor<typeof Events.InteractionCreate> = {
   name: Events.InteractionCreate,
   once: false,
   async execute(interaction: Interaction): Promise<void> {
-    if (!interaction.isChatInputCommand()) {
-      return;
-    }
-
-    const command = commandRegistry.get(interaction.commandName);
-
-    if (!command) {
-      logger.warn({ commandName: interaction.commandName }, 'Comando no registrado');
-      return;
-    }
-
     try {
-      await command.execute(interaction);
-    } catch (error) {
-      const { shouldLogStack, ...response } = mapErrorToDiscordResponse(error);
-      const logPayload = { command: interaction.commandName, userId: interaction.user.id };
-
-      if (shouldLogStack) {
-        logger.error({ ...logPayload, err: error }, 'Error ejecutando comando');
-      } else {
-        logger.warn({ ...logPayload, err: error }, 'Error controlado ejecutando comando');
+      if (interaction.isChatInputCommand()) {
+        await handleChatInput(interaction);
+        return;
       }
 
-      if (interaction.deferred || interaction.replied) {
-        await interaction.followUp(response);
+      if (interaction.isButton()) {
+        await handleButton(interaction);
+        return;
+      }
+
+      if (interaction.isModalSubmit()) {
+        await handleModal(interaction);
+        return;
+      }
+    } catch (error) {
+      const { shouldLogStack, referenceId, ...response } = mapErrorToDiscordResponse(error);
+      const baseLog = {
+        interactionType: interaction.type,
+        userId: interaction.user?.id,
+        referenceId,
+      };
+
+      if (shouldLogStack) {
+        logger.error({ ...baseLog, err: error }, 'Error inesperado procesando interacción.');
       } else {
-        await interaction.reply(response);
+        logger.warn({ ...baseLog, err: error }, 'Error controlado procesando interacción.');
+      }
+
+      if (interaction.isRepliable()) {
+        if (interaction.deferred || interaction.replied) {
+          await interaction.followUp(response);
+        } else {
+          await interaction.reply(response);
+        }
       }
     }
   },

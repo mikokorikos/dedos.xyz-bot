@@ -1,27 +1,56 @@
+// ============================================================================
+// RUTA: src/shared/errors/discord-error-mapper.ts
+// ============================================================================
+
+import { randomUUID } from 'node:crypto';
+
 import type { InteractionReplyOptions } from 'discord.js';
+import { EmbedBuilder } from 'discord.js';
 
-import type { AppError } from '@/shared/errors/base.error';
-import { isAppError } from '@/shared/errors/base.error';
+import { COLORS, EMBED_LIMITS } from '@/shared/config/constants';
+import type { DedosError } from '@/shared/errors/base.error';
+import { isDedosError } from '@/shared/errors/base.error';
 
-const GENERIC_MESSAGE = 'Ha ocurrido un error inesperado. El equipo ha sido notificado.';
+const GENERIC_MESSAGE = 'Ha ocurrido un error inesperado. Nuestro equipo ya fue notificado.';
 
-type DiscordErrorResponse = InteractionReplyOptions & { readonly shouldLogStack?: boolean };
+export interface DiscordErrorResponse extends InteractionReplyOptions {
+  readonly shouldLogStack: boolean;
+  readonly referenceId: string;
+}
 
-export const mapErrorToDiscordResponse = (error: unknown): DiscordErrorResponse => {
-  if (isAppError(error)) {
-    return {
-      content: error.exposeMessage ? error.message : GENERIC_MESSAGE,
-      ephemeral: true,
-      shouldLogStack: error.statusCode >= 500,
-    };
+const buildErrorEmbed = (title: string, description: string, referenceId: string): EmbedBuilder =>
+  new EmbedBuilder()
+    .setColor(COLORS.danger)
+    .setTitle(title.slice(0, EMBED_LIMITS.title))
+    .setDescription(
+      `${description.slice(0, EMBED_LIMITS.description - 40)}\n\nCódigo de referencia: \`${referenceId}\``,
+    )
+    .setTimestamp(new Date());
+
+const resolveMessage = (error: DedosError | unknown): { message: string; expose: boolean } => {
+  if (isDedosError(error)) {
+    return { message: error.message, expose: error.exposeMessage };
   }
 
-  const unknownError = error as Partial<AppError> | undefined;
-  const content = typeof unknownError?.message === 'string' ? unknownError.message : GENERIC_MESSAGE;
+  const unknownError = error as Partial<DedosError> | undefined;
+  if (typeof unknownError?.message === 'string') {
+    return { message: unknownError.message, expose: false };
+  }
+
+  return { message: GENERIC_MESSAGE, expose: false };
+};
+
+export const mapErrorToDiscordResponse = (error: unknown): DiscordErrorResponse => {
+  const referenceId = randomUUID();
+  const { message, expose } = resolveMessage(error);
+
+  const description = expose ? message : GENERIC_MESSAGE;
+  const shouldLogStack = isDedosError(error) ? !error.exposeMessage : true;
 
   return {
-    content,
+    embeds: [buildErrorEmbed('Ha ocurrido un problema', description, referenceId)],
     ephemeral: true,
-    shouldLogStack: true,
+    shouldLogStack,
+    referenceId,
   };
 };
