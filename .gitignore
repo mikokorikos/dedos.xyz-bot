@@ -1,6 +1,10 @@
 # Dependencies
 node_modules/
+dist/
 .npm/
+coverage/
+.turbo/
+tmp/
 
 # Environment variables
 .env
@@ -19,10 +23,13 @@ pids
 *.pid.lock
 
 # Coverage directory used by tools like istanbul
-coverage/
+# Prisma
+prisma/dev.db
+prisma/dev.db-journal
 
-# nyc test coverage
+# Vitest
 .nyc_output
+*.tsbuildinfo
 
 # Grunt intermediate storage
 .grunt
