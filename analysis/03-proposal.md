@@ -278,45 +278,56 @@ model MemberTradeStats {
 
 ### 5. Roadmap de implementación
 ```markdown
-### Sprint 1: Fundación (Días 1-3)
-- [ ] Setup TypeScript + ESLint + Prettier
-- [ ] Prisma schema + migrations
-- [ ] Config con Zod (.env validation)
-- [ ] Pino logger setup
-- [ ] Client bootstrap básico
-- [ ] Estructura de carpetas completa
+## Entrega 1 · Setup y Fundación (Sprints 1 y 2)
+### Sprint 1 (Días 1-3)
+- [ ] Inicializar monorepo TypeScript: tsconfig, ESLint, Prettier, Husky opcional.
+- [ ] Definir estructura de carpetas Clean Architecture.
+- [ ] Configuración de `.env` con validación Zod.
+- [ ] Configurar logger Pino y capa shared de errores/utilidades.
 
-### Sprint 2: Core Commands (Días 4-7)
-- [ ] Command handler + registration
-- [ ] Event handlers (ready, interactionCreate)
-- [ ] /ping, /help básicos
-- [ ] Error handling centralizado
-- [ ] Tests unitarios de infraestructura
+### Sprint 2 (Días 4-7)
+- [ ] Esquema Prisma completo + primera migración.
+- [ ] Bootstrap de Discord client y handlers base (`ready`, `interactionCreate`).
+- [ ] Implementar comandos `/ping` y `/help`.
+- [ ] Scripts `deploy-commands` y `clear-commands`.
+- [ ] Documentación inicial (`README`, `changes.txt`).
 
-### Sprint 3: Middleman System (Días 8-12)
-- [ ] Entities: Ticket, Trade, Review
-- [ ] Use cases: OpenMiddlemanChannel, ClaimTrade, CloseTrade
-- [ ] Comandos: /middleman (con modal mejorado)
-- [ ] Panel dinámico con botones
-- [ ] Sistema de reseñas (rating 1-5)
-- [ ] Tests de use cases
+## Entrega 2 · Sistema Middleman (Sprint 3)
+### Sprint 3 (Días 8-12)
+- [ ] Value objects y entidades (Ticket, Trade, Review, Middleman).
+- [ ] Casos de uso: OpenMiddlemanChannel, ClaimTrade, CloseTrade, SubmitReview.
+- [ ] Repositorios Prisma correspondientes.
+- [ ] Comando `/middleman`, modal y botones Claim/Finalize.
+- [ ] Embeds especializados en `EmbedFactory`.
+- [ ] Tests unitarios de value objects y casos de uso.
 
-### Sprint 4: Tickets & Warns (Días 13-15)
-- [ ] Sistema de tickets generales
-- [ ] Comandos /warn
-- [ ] /stats con generación de tarjetas
-- [ ] Tests de integración
+## Entrega 3 · Tickets Generales, Warns y Stats (Sprints 4 y 5)
+### Sprint 4 (Días 13-15)
+- [ ] Casos de uso para tickets generales (crear/cerrar) y cooldown manager.
+- [ ] Select menu `/ticket` y flujo de creación de canales.
+- [ ] Integración del sistema de warns: entidades, repos, use cases.
+- [ ] Utilidades para DMs (cola) y permisos compartidos.
 
-### Sprint 5: Admin & Polish (Días 16-18)
-- [ ] /db commands (con confirmación)
-- [ ] /config get/set mejorado
-- [ ] Documentación completa
-- [ ] CI/CD con GitHub Actions
-- [ ] Docker setup
+### Sprint 5 (Días 16-18)
+- [ ] Estadísticas de miembro: entidades, repos, casos de uso y comando `/stats`.
+- [ ] Generador de tarjetas (Canvas) o fallback embed documentado.
+- [ ] Pruebas unitarias/integración clave (warns, cooldowns, repos Prisma).
+- [ ] Documentación extendida de dominios (`docs/COMMANDS.md` preliminar).
 
-### Sprint 6: Testing & Migration (Días 19-21)
-- [ ] Coverage >70%
-- [ ] E2E tests con mocks Discord
-- [ ] Script de migración probado
-- [ ] Deploy a producción
+## Entrega 4 · Admin, Migración y Deploy (Sprints 6, 7 y 8)
+### Sprint 6 (Días 19-20)
+- [ ] Comandos administrativos `/db` y `/config` con permisos reforzados.
+- [ ] Eventos adicionales (`guildMemberAdd`, `messageReactionAdd`).
+- [ ] Scripts de migración (`migrate-from-old-db`, `validate-migration`, `backup-db`).
+
+### Sprint 7 (Días 21-23)
+- [ ] CI/CD con GitHub Actions (`ci.yml`, `deploy.yml`).
+- [ ] Dockerfile multi-stage + `.dockerignore` + actualización de `docker-compose` si aplica.
+- [ ] Documentación técnica (`docs/ARCHITECTURE.md`, `docs/DATABASE.md`, `docs/DEPLOYMENT.md`, `docs/MIGRATION.md`).
+
+### Sprint 8 (Días 24-25)
+- [ ] Pruebas E2E simuladas para middleman, tickets y warns.
+- [ ] Incrementar cobertura >70% y reportes en CI.
+- [ ] Plan de release final y checklist de producción.
+- [ ] Actualización final de `README.md` y `changes.txt`.
 ```

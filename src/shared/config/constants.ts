@@ -32,6 +32,8 @@ export const COOLDOWNS = Object.freeze({
   ping: 5_000,
   help: 10_000,
   middlemanRequest: 60_000,
+  generalTicket: 120_000,
+  warnCommand: 5_000,
 });
 
 export const PERMISSIONS = Object.freeze({

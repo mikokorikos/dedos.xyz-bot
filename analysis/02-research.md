@@ -3,8 +3,8 @@
 ### Stack recomendado
 | Categoría | Opción elegida | Alternativas consideradas | Justificación |
 |-----------|----------------|---------------------------|---------------|
-| ORM | Prisma 6.x | TypeORM 0.3, Drizzle ORM 0.31 | Cliente maduro con tipado estricto, migraciones declarativas y ecosistema amplio; releases frecuentes (>=6.16). TypeORM mantiene soporte pero menos activo y con DX inconsistente; Drizzle es liviano y rápido pero aún consolida tooling para MySQL complejos. |
-| Framework backend | Arquitectura modular sobre discord.js v14 | NestJS 11, Sapphire, framework-less minimalista | Mantener control directo sobre flujos asíncronos y gateway; evita overhead de Nest para casos no HTTP; se puede estructurar con Clean Architecture sin depender de DI pesado. Sapphire añade convenciones pero menos flexible para dominio específico middleman. |
+| ORM | Prisma 6.x | TypeORM 0.3, Drizzle ORM 0.31 | Cliente auto-generado con tipado estricto y migraciones declarativas integradas en Prisma Migrate.[^prisma-client][^prisma-migrate] TypeORM mantiene soporte pero su DX es más irregular pese a ofrecer Active Record y Data Mapper.[^typeorm-patterns] Drizzle es liviano y veloz pero todavía consolida tooling para escenarios MySQL complejos.[^drizzle-sql] |
+| Framework backend | Arquitectura modular sobre discord.js v14 | NestJS 11, Sapphire, framework-less minimalista | Mantener control directo sobre flujos asíncronos y gateway de Discord con la librería oficial `discord.js`, evitando overhead innecesario de frameworks HTTP.[^discord-commands] Sapphire añade convenciones pero menos flexible para dominio específico middleman. |
 | Validación | Zod 3 | io-ts, ArkType, Yup | Zod ofrece DX excelente, inferencia de tipos, soporte para validación de interacciones y parsing de `.env`. io-ts es potente pero verboso; ArkType aún joven. |
 | Testing | Vitest 2 | Jest 29, uvu | Vitest integra bien con ESM/TypeScript, mocks nativos y modo watch rápido; jest requiere configuración extra para ESM + discord.js. |
 | Logging | Pino 9 + pino-pretty | Winston 3, Bunyan | Pino prioriza performance y JSON logs listos para agregadores; Winston es más flexible pero pesado; Bunyan ha perdido mantenimiento activo. |
@@ -16,18 +16,18 @@
 
 #### Prisma vs TypeORM vs Drizzle
 **Prisma**
-- ✅ Migraciones controladas (`prisma migrate`), generación de cliente con tipos exhaustivos.
-- ✅ Comunidad activa y tooling (Prisma Studio, Data Proxy) útil para depuración.
+- ✅ Prisma Client se genera automáticamente a partir del esquema y expone consultas 100 % tipadas para Node.js y TypeScript.[^prisma-client]
+- ✅ Prisma Migrate permite definir el modelo de datos y generar migraciones declarativas desde la misma fuente de verdad.[^prisma-migrate]
 - ⚠️ Abstracción alta limita queries SQL muy específicas; requiere `prisma.$queryRaw` en escenarios edge.
 - ⚠️ Consumo de memoria mayor en builds serverless, aunque manejable en bots long-running.
 
 **TypeORM**
-- ✅ Soporta patrones Active Record y Data Mapper.
+- ✅ Soporta patrones Active Record y Data Mapper en el mismo ORM, facilitando adaptar el estilo a cada módulo.[^typeorm-patterns]
 - ⚠️ Configuración compleja para ESM/TypeScript puro y manejo de migraciones menos ergonómico.
 - ⚠️ Historial de breaking changes y menor cadencia de releases en comparación (último 0.3.x).
 
 **Drizzle ORM**
-- ✅ Performance sobresaliente y enfoque SQL-first con tipos generados.
+- ✅ Performance sobresaliente y enfoque SQL-first declarando esquemas y consultas tipadas sin abandonar SQL.[^drizzle-sql]
 - ✅ Paquetes ligeros, tree-shaking friendly.
 - ⚠️ Ecosistema aún en consolidación (CLI, generadores de DTO, conectores enterprise).
 - ⚠️ Falta tooling gráfico como Prisma Studio para debugging rápido.
@@ -79,6 +79,10 @@
 - BullMQ reutiliza Redis, soporta jobs delayed, retries y workers escalables.
 - node-cache/bee-queue limitados al proceso actual, dificultan escalado horizontal.
 
+### Buenas prácticas clave para bots (2024)
+- Priorizar **application commands** (slash, menús de mensaje/usuario) para ofrecer experiencias nativas en el cliente Discord.[^discord-commands]
+- Garantizar respuestas iniciales dentro de los **3 segundos** desde la interacción para evitar invalidar el token de respuesta, delegando trabajos largos a follow-ups o colas.[^discord-3s]
+
 ### Arquitectura propuesta
 - **Clean Architecture** orientada a dominios (Tickets, Middleman, Warns, Reviews, Stats) separando capas Presentation (Discord adapters), Application (use cases, DTOs), Domain (entidades, servicios), Infrastructure (Prisma repos, integraciones externas) y Shared (config, logger, errores).【Diseño propuesto para mantener substituibilidad】
 - Aplicar **CQRS ligero**: comandos (mutaciones) gestionados por handlers específicos; consultas (stats, listados) a través de repos dedicados, permitiendo optimizaciones de lectura (cache/paginación).
@@ -91,3 +95,10 @@
 3. **Redis requerido**: añade dependencia operativa, pero habilita cooldowns distribuidos, colas y caching crítico.
 4. **Vitest + ts-node/tsx**: reduce compatibilidad con tooling Jest existente; se mitigará documentando scripts equivalentes.
 5. **OpenTelemetry/Sentry**: aumenta instrumentación inicial, pero brinda observabilidad necesaria para flujos multi-paso (middleman/trades).
+
+[^prisma-client]: Prisma. *Prisma Client*. «Auto-generated and type-safe query builder for Node.js & TypeScript». https://raw.githubusercontent.com/prisma/prisma/refs/heads/main/README.md (consultado en noviembre de 2024).
+[^prisma-migrate]: Prisma. *Prisma Migrate*. «Declarative data modeling & migration system». https://raw.githubusercontent.com/prisma/prisma/refs/heads/main/README.md (consultado en noviembre de 2024).
+[^typeorm-patterns]: TypeORM. *README*. «TypeORM supports both Active Record and Data Mapper patterns». https://raw.githubusercontent.com/typeorm/typeorm/master/README.md (consultado en noviembre de 2024).
+[^drizzle-sql]: Drizzle Team. *Drizzle ORM README*. «Declare SQL schemas and build relational/SQL-like queries... Drizzle Kit CLI for migrations». https://raw.githubusercontent.com/drizzle-team/drizzle-orm/main/README.md (consultado en noviembre de 2024).
+[^discord-commands]: Discord. *Application Commands*. «Application commands are native ways to interact with apps in the Discord client... chat input, message context, user context». https://raw.githubusercontent.com/discord/discord-api-docs/main/docs/interactions/application-commands.mdx (consultado en noviembre de 2024).
+[^discord-3s]: Discord. *Receiving and Responding*. «You must send an initial response within 3 seconds of receiving the event». https://raw.githubusercontent.com/discord/discord-api-docs/main/docs/interactions/receiving-and-responding.mdx (consultado en noviembre de 2024).

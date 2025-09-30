@@ -8,7 +8,7 @@ import globals from 'globals';
 
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**', '.eslintrc.cjs'],
+    ignores: ['dist/**', 'node_modules/**', '.eslintrc.cjs', 'scripts/**/*.js'],
   },
   js.configs.recommended,
   {
