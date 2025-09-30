@@ -4,6 +4,6 @@
     "allowJs": true,
     "noEmit": true
   },
-  "include": ["src", "scripts", "vitest.config.ts"],
+  "include": ["src", "scripts", "tests", "vitest.config.ts"],
   "exclude": ["dist", "node_modules"]
 }

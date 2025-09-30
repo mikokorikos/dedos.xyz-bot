@@ -37,6 +37,106 @@ export class InvalidRatingError extends DedosError {
   }
 }
 
+export class InvalidSnowflakeError extends DedosError {
+  public constructor(value: string) {
+    super({
+      code: 'INVALID_SNOWFLAKE',
+      message: 'El identificador de Discord proporcionado no es válido.',
+      metadata: { value },
+      exposeMessage: true,
+    });
+  }
+}
+
+export class InvalidTicketStateError extends DedosError {
+  public constructor(current: unknown, expected: unknown) {
+    super({
+      code: 'INVALID_TICKET_STATE',
+      message: 'El ticket no se encuentra en un estado válido para esta operación.',
+      metadata: { current, expected },
+      exposeMessage: true,
+    });
+  }
+}
+
+export class TicketAlreadyClaimedError extends DedosError {
+  public constructor(ticketId: number) {
+    super({
+      code: 'TICKET_ALREADY_CLAIMED',
+      message: 'Este ticket ya fue reclamado por otro middleman.',
+      metadata: { ticketId },
+      exposeMessage: true,
+    });
+  }
+}
+
+export class TooManyOpenTicketsError extends DedosError {
+  public constructor(limit: number) {
+    super({
+      code: 'TOO_MANY_OPEN_TICKETS',
+      message: `Has alcanzado el límite de ${limit} tickets abiertos simultáneamente.`,
+      metadata: { limit },
+      exposeMessage: true,
+    });
+  }
+}
+
+export class InvalidTradeStateError extends DedosError {
+  public constructor(current: unknown, expected: unknown) {
+    super({
+      code: 'INVALID_TRADE_STATE',
+      message: 'La transacción no está en un estado válido para completar la operación.',
+      metadata: { current, expected },
+      exposeMessage: true,
+    });
+  }
+}
+
+export class TradesNotConfirmedError extends DedosError {
+  public constructor(ticketId: number) {
+    super({
+      code: 'TRADES_NOT_CONFIRMED',
+      message: 'Existen participantes que no han confirmado la transacción.',
+      metadata: { ticketId },
+      exposeMessage: true,
+    });
+  }
+}
+
+export class ChannelCreationError extends DedosError {
+  public constructor(reason?: string) {
+    super({
+      code: 'CHANNEL_CREATION_FAILED',
+      message: 'No se pudo crear el canal en Discord.',
+      metadata: { reason },
+      exposeMessage: true,
+    });
+  }
+}
+
+export class ChannelCleanupError extends DedosError {
+  public constructor(channelId: string, cause?: unknown) {
+    super({
+      code: 'CHANNEL_CLEANUP_FAILED',
+      message: 'No se pudo limpiar el canal creado tras un error.',
+      metadata: { channelId },
+      exposeMessage: false,
+      cause,
+    });
+  }
+}
+
+export class TicketClosedError extends DedosError {
+  public constructor(ticketId: number) {
+    super({
+      code: 'TICKET_ALREADY_CLOSED',
+      message: 'El ticket ya se encuentra cerrado.',
+      metadata: { ticketId },
+      exposeMessage: true,
+    });
+  }
+}
+
 export class MiddlemanNotFoundError extends DedosError {
   public constructor(userId: string) {
     super({
