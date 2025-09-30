@@ -15,6 +15,8 @@ import { PrismaReviewRepository } from '@/infrastructure/repositories/PrismaRevi
 import { PrismaTicketRepository } from '@/infrastructure/repositories/PrismaTicketRepository';
 import { PrismaTradeRepository } from '@/infrastructure/repositories/PrismaTradeRepository';
 import type { Command } from '@/presentation/commands/types';
+import { registerClaimButton } from '@/presentation/components/buttons/ClaimButton';
+import { registerFinalizeButton } from '@/presentation/components/buttons/FinalizeButton';
 import { MiddlemanModal } from '@/presentation/components/modals/MiddlemanModal';
 import { registerModalHandler } from '@/presentation/components/registry';
 import { embedFactory } from '@/presentation/embeds/EmbedFactory';
@@ -35,6 +37,9 @@ const submitReviewUseCase = new SubmitReviewUseCase(reviewRepo, ticketRepo, embe
 registerModalHandler('middleman-open', async (interaction) => {
   await MiddlemanModal.handleSubmit(interaction, openUseCase);
 });
+
+registerClaimButton(claimUseCase, ticketRepo);
+registerFinalizeButton(closeUseCase, ticketRepo);
 
 const ensureTextChannel = (interaction: ChatInputCommandInteraction): TextChannel => {
   if (!interaction.guild) {

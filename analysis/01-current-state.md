@@ -62,3 +62,9 @@
 - Establecer estrategia de logging/monitoring (Pino + OpenTelemetry + Sentry) y cómo correlacionar flujos multi-tabla.
 - Decidir sobre almacenamiento de caché/colas (Redis) y patrón de publicación (event-driven vs jobs programados) para reseñas y DMs.
 - Planificar sharding/escalabilidad (shards nativos de discord.js o gateway managers) frente al crecimiento del servidor.
+
+### 7. Información faltante o pendiente de confirmar
+- **Infraestructura actual**: no se dispone de detalles sobre el proveedor de hosting actual del bot (VPS, contenedor, serverless) ni sobre los pipelines CI/CD en producción; se asume despliegue manual basado en la presencia de `docker-compose` y scripts aislados.【F:docker-compose.yml†L1-L44】【F:scripts/register-commands.js†L1-L137】
+- **Versionado de dependencias**: aunque existe `package-lock.json`, no hay evidencia del proceso exacto de build/test vigente (falta `CI` o scripts documentados) y se desconoce la versión de Node objetivo en producción. Necesario validar versiones mínimas soportadas antes de migrar.
+- **Integraciones externas**: existen utilidades para Roblox (`utils/roblox.js`) y colas de DMs, pero no se cuenta con credenciales ni políticas actuales de rate limiting; se deberá coordinar con el equipo para obtenerlas o definir nuevas claves de entorno.【F:utils/roblox.js†L1-L162】【F:utils/queue.js†L1-L35】
+- **Políticas de moderación**: el sistema de warns aplica escalado automático, pero no hay documentación oficial sobre umbrales, notificaciones y procesos fuera de Discord; se requiere definirlas para replicar comportamientos en la versión refactorizada.【F:features/warns/logic.js†L1-L77】

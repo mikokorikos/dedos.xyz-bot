@@ -4,10 +4,12 @@
 
 import { z } from 'zod';
 
+import { SnowflakeSchema } from '@/shared/utils/validation';
+
 export const SubmitReviewSchema = z.object({
   ticketId: z.number().int().positive(),
-  reviewerId: z.string().regex(/^\d+$/u, 'Invalid Discord ID'),
-  middlemanId: z.string().regex(/^\d+$/u, 'Invalid Discord ID'),
+  reviewerId: SnowflakeSchema,
+  middlemanId: SnowflakeSchema,
   rating: z.number().int().min(1).max(5),
   comment: z.string().max(500).optional(),
 });
