@@ -34,7 +34,7 @@ cp .env.example .env
 Campos obligatorios:
 - `DISCORD_TOKEN`: token del bot
 - `DISCORD_CLIENT_ID`: ID de la aplicación
-- `DATABASE_URL`: cadena de conexión MySQL (por ejemplo `mysql://user:password@localhost:3306/dedos_shop`)
+- Configuración de base de datos: usa `DATABASE_URL` (por ejemplo `mysql://user:password@host:3306/db`) **o** define las variables `MYSQL_HOST`, `MYSQL_PORT`, `MYSQL_USER`, `MYSQL_PASSWORD` y `MYSQL_DATABASE`.
 
 Campos opcionales:
 - `DISCORD_GUILD_ID` para registrar comandos sólo en una guild durante desarrollo
