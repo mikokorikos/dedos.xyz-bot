@@ -13,7 +13,9 @@ Reescritura completa del bot de Dedos Shop en TypeScript con arquitectura limpia
 ## 📦 Requisitos
 - Node.js 20 LTS
 - npm 9+ o pnpm/yarn equivalente
+
 - MySQL 8 (puede ser instalado manualmente o levantarlo con Docker Compose)
+
 
 ## 🔧 Instalación
 ```bash
@@ -22,6 +24,7 @@ npm run db:generate
 ```
 
 Para desarrollo local puedes apoyarte en Docker Compose para la base de datos y Redis:
+
 ```bash
 npm run docker:up
 ```
@@ -59,10 +62,13 @@ src/
 ```
 
 ## 🧪 Desarrollo diario
+
 1. (Opcional) `npm run docker:up` para servicios locales.
+
 2. `npm run dev`
 3. `npm run deploy:commands`
 4. Ejecuta `npm run lint` y `npm run test` antes de cada commit.
+
 
 ## 🖥️ Despliegue sin Docker
 
@@ -84,6 +90,7 @@ dispongas de Node.js 20 y MySQL 8 (además de Redis si habilitas la cola de DMs)
 
 Consulta [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) para pasos detallados y un ejemplo
 de unidad `systemd`.
+
 
 ## 📚 Documentación
 - [docs/COMMANDS.md](docs/COMMANDS.md): comandos disponibles y ejemplos.

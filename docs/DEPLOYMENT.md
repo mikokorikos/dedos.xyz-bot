@@ -5,6 +5,7 @@
 - Base de datos MySQL 8
 - Opcional: Redis para colas futuras
 
+
 ## Despliegue sin Docker (bare-metal o VM)
 
 1. **Preparar servidor**
@@ -68,6 +69,7 @@
 - Aplica migraciones antes de nuevos despliegues con `npm run db:migrate:prod`.
 - Usa `npm run clear:commands` si necesitas limpiar comandos registrados.
 
+
 ### Despliegue con Docker
 ```bash
 docker build -t dedos-shop-bot .
@@ -78,5 +80,7 @@ docker run --env-file .env dedos-shop-bot
 - `ci.yml` ejecuta lint, test y build en cada PR.
 - `deploy.yml` permite despliegue manual (`workflow_dispatch`) seleccionando `staging` o `production`.
 
+
 Asegúrate de ejecutar `scripts/backup-db.ts` antes de migraciones críticas y
 `scripts/validate-migration.ts` después de migrar datos.
+
