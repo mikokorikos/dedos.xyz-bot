@@ -2,6 +2,8 @@
 // RUTA: src/shared/utils/discord.utils.ts
 // ============================================================================
 
+import type { GuildMember, User } from 'discord.js';
+
 import { EMBED_LIMITS } from '@/shared/config/constants';
 
 const CHANNEL_NAME_REGEX = /[^a-z0-9-]+/gu;
@@ -15,8 +17,7 @@ export const truncateText = (value: string, limit: number): string => {
   return `${value.slice(0, Math.max(0, limit - 3))}...`;
 };
 
-export const clampEmbedField = (value: string): string =>
-  truncateText(value, EMBED_LIMITS.fieldValue);
+export const clampEmbedField = (value: string): string => truncateText(value, EMBED_LIMITS.fieldValue);
 
 export const isValidSnowflake = (value: string): boolean => /^\d{17,20}$/u.test(value);
 
@@ -49,3 +50,10 @@ export const splitIntoEmbedFields = (text: string, limit: number = EMBED_LIMITS.
 
   return chunks;
 };
+
+export const formatUserTag = (user: User): string => `${user.username}#${user.discriminator}`;
+
+export const mentionUser = (id: string | bigint): string => `<@${id.toString()}>`;
+
+export const resolveDisplayName = (member: GuildMember | null, user: User): string =>
+  member?.displayName ?? user.displayName ?? user.username;

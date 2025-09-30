@@ -5,18 +5,23 @@
 import type {
   ChatInputCommandInteraction,
   SlashCommandBuilder,
+  SlashCommandOptionsOnlyBuilder,
   SlashCommandSubcommandsOnlyBuilder,
 } from 'discord.js';
 
 import type { CommandCooldownKey } from '@/shared/config/constants';
 
-type SlashBuilder = SlashCommandBuilder | SlashCommandSubcommandsOnlyBuilder;
+type SlashBuilder =
+  | SlashCommandBuilder
+  | SlashCommandSubcommandsOnlyBuilder
+  | SlashCommandOptionsOnlyBuilder;
 
 type CommandCategory =
   | 'General'
   | 'Middleman'
   | 'Tickets'
   | 'Moderación'
+  | 'Estadísticas'
   | 'Administración';
 
 export interface CommandMeta {

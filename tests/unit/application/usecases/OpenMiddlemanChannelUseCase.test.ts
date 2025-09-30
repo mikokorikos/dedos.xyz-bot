@@ -86,7 +86,7 @@ const createMockLogger = (): Logger =>
 
 const createMockGuild = (channel: TextChannel): Guild =>
   ({
-    id: '456',
+    id: '987654321098765432',
     roles: { everyone: { id: 'everyone' } },
     members: { me: { id: 'bot-id' } },
     channels: {
@@ -95,6 +95,8 @@ const createMockGuild = (channel: TextChannel): Guild =>
   } as unknown as Guild);
 
 describe('OpenMiddlemanChannelUseCase', () => {
+  const USER_ID = '123456789012345678';
+  const GUILD_ID = '987654321098765432';
   let repo: MockTicketRepository;
   let useCase: OpenMiddlemanChannelUseCase;
   let logger: Logger;
@@ -117,8 +119,8 @@ describe('OpenMiddlemanChannelUseCase', () => {
   it('should create ticket and channel successfully', async () => {
     const result = await useCase.execute(
       {
-        userId: '123',
-        guildId: '456',
+        userId: USER_ID,
+        guildId: GUILD_ID,
         type: 'MM',
         context: 'Un contexto suficientemente largo para crear ticket.',
       },
@@ -137,8 +139,8 @@ describe('OpenMiddlemanChannelUseCase', () => {
     await expect(
       useCase.execute(
         {
-          userId: '123',
-          guildId: '456',
+          userId: USER_ID,
+          guildId: GUILD_ID,
           type: 'MM',
           context: 'Un contexto suficientemente largo para crear ticket.',
         },
@@ -153,8 +155,8 @@ describe('OpenMiddlemanChannelUseCase', () => {
     await expect(
       useCase.execute(
         {
-          userId: '123',
-          guildId: '456',
+          userId: USER_ID,
+          guildId: GUILD_ID,
           type: 'MM',
           context: 'Un contexto suficientemente largo para crear ticket.',
         },

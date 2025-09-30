@@ -11,6 +11,7 @@ import {
 } from 'discord.js';
 
 import type { OpenMiddlemanChannelUseCase } from '@/application/usecases/middleman/OpenMiddlemanChannelUseCase';
+import { TicketType } from '@/domain/entities/types';
 import { embedFactory } from '@/presentation/embeds/EmbedFactory';
 import { mapErrorToDiscordResponse } from '@/shared/errors/discord-error-mapper';
 import { logger } from '@/shared/logger/pino';
@@ -82,7 +83,7 @@ export class MiddlemanModal {
         {
           userId: interaction.user.id,
           guildId: interaction.guild.id,
-          type: 'MM',
+          type: TicketType.MM,
           context,
           partnerTag,
           robloxUsername,

@@ -1,4 +1,8 @@
-# v1.0.0 - Initial TypeScript foundation
-- Documented the modernization plan in `analysis/03-proposal.md`.
-- Bootstrapped the TypeScript project with strict tooling, Prisma schema, and Docker services.
-- Implemented the new runtime core with logger, config validation, embed factory, and the `/ping` command.
+# v1.0.0 - Implementación inicial completa
+- Arquitectura modular lista para producción (domain/application/infrastructure/presentation).
+- Sistema de tickets generales con select + modal, cierres y control de cooldown.
+- Flujo de middleman con modales, botones de reclamar/finalizar y reseñas.
+- Gestión de warns con escalamiento, DM automatizado y repositorio Prisma.
+- Comando `/stats` con leaderboard y base para tarjeta visual.
+- Comandos administrativos `/config` y `/db`, eventos de bienvenida y logging de reacciones.
+- Scripts de migración (`migrate-from-old-db`, `validate-migration`, `backup-db`) y pipelines CI/CD.

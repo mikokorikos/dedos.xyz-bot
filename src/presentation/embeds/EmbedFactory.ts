@@ -31,6 +31,17 @@ interface MiddlemanPanelData {
   readonly notes?: string;
 }
 
+interface MiddlemanClaimData {
+  readonly ticketId: string | number;
+  readonly middlemanTag: string;
+  readonly claimedAt: Date;
+}
+
+interface TradeClosedData {
+  readonly ticketId: string | number;
+  readonly summary: string;
+}
+
 interface ReviewRequestData {
   readonly middlemanTag: string;
   readonly tradeSummary: string;
@@ -39,6 +50,13 @@ interface ReviewRequestData {
 interface StatsEmbedData {
   readonly title: string;
   readonly stats: Record<string, string | number>;
+}
+
+interface WarnEmbedData {
+  readonly userTag: string;
+  readonly moderatorTag: string;
+  readonly severity: string;
+  readonly reason?: string | null;
 }
 
 export class EmbedFactory {
@@ -111,12 +129,57 @@ export class EmbedFactory {
     });
   }
 
+  public middlemanClaim(data: MiddlemanClaimData): EmbedBuilder {
+    return this.base({
+      color: COLORS.info,
+      title: `Ticket #${data.ticketId} reclamado`,
+      description: `Middleman asignado: ${data.middlemanTag}`,
+      footer: `Reclamado el ${data.claimedAt.toLocaleString('es-ES')}`,
+    });
+  }
+
+  public tradeClosed(data: TradeClosedData): EmbedBuilder {
+    return this.base({
+      color: COLORS.success,
+      title: `Ticket #${data.ticketId} finalizado`,
+      description: data.summary,
+    });
+  }
+
   public reviewRequest(data: ReviewRequestData): EmbedBuilder {
     return this.base({
       color: COLORS.info,
       title: 'Cuéntanos tu experiencia',
       description: data.tradeSummary,
       fields: [{ name: 'Middleman', value: clampEmbedField(data.middlemanTag), inline: true }],
+    });
+  }
+
+  public warnApplied(data: WarnEmbedData): EmbedBuilder {
+    return this.base({
+      color: COLORS.warning,
+      title: 'Advertencia registrada',
+      description:
+        data.reason ?? 'Se ha registrado una advertencia. Revisa las normas del servidor para evitar sanciones.',
+      fields: [
+        { name: 'Usuario', value: clampEmbedField(data.userTag), inline: true },
+        { name: 'Moderador', value: clampEmbedField(data.moderatorTag), inline: true },
+        { name: 'Severidad', value: clampEmbedField(data.severity), inline: true },
+      ],
+    });
+  }
+
+  public warnSummary(summary: Record<string, string | number>): EmbedBuilder {
+    const fields = Object.entries(summary).map(([key, value]) => ({
+      name: truncateText(key, EMBED_LIMITS.fieldName),
+      value: clampEmbedField(String(value)),
+      inline: true,
+    }));
+
+    return this.base({
+      color: COLORS.info,
+      title: 'Resumen de advertencias',
+      fields,
     });
   }
 
