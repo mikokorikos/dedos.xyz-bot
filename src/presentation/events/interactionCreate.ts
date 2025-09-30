@@ -21,7 +21,7 @@ const handleChatInput = async (interaction: ChatInputCommandInteraction): Promis
   const command = commandRegistry.get(interaction.commandName);
 
   if (!command) {
-    logger.warn({ commandName: interaction.commandName }, 'Se intentó ejecutar un comando no registrado.');
+    logger.warn({ commandName: interaction.commandName }, 'Se intento ejecutar un comando no registrado.');
     await interaction.reply({
       embeds: [
         embedFactory.warning({
@@ -41,7 +41,7 @@ const handleButton = async (interaction: ButtonInteraction): Promise<void> => {
   const handler = buttonHandlers.get(interaction.customId);
 
   if (!handler) {
-    logger.warn({ customId: interaction.customId }, 'No existe handler registrado para el botón.');
+    logger.warn({ customId: interaction.customId }, 'No existe handler registrado para el boton.');
     await interaction.reply({
       embeds: [
         embedFactory.warning({
@@ -106,9 +106,9 @@ export const interactionCreateEvent: EventDescriptor<typeof Events.InteractionCr
       };
 
       if (shouldLogStack) {
-        logger.error({ ...baseLog, err: error }, 'Error inesperado procesando interacción.');
+        logger.error({ ...baseLog, err: error }, 'Error inesperado procesando interaccion.');
       } else {
-        logger.warn({ ...baseLog, err: error }, 'Error controlado procesando interacción.');
+        logger.warn({ ...baseLog, err: error }, 'Error controlado procesando interaccion.');
       }
 
       if (interaction.isRepliable()) {

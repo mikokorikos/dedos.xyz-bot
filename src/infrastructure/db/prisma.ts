@@ -26,7 +26,7 @@ if (env.NODE_ENV !== 'production') {
 export const ensureDatabaseConnection = async (): Promise<void> => {
   try {
     await prisma.$connect();
-    logger.debug('Conexión con Prisma establecida.');
+    logger.debug('Conexion con Prisma establecida.');
   } catch (error) {
     logger.error({ err: error }, 'No fue posible conectar con la base de datos.');
     throw error;

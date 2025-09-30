@@ -6,11 +6,14 @@ import 'dotenv/config';
 
 import { randomUUID } from 'node:crypto';
 
+import type { ClientEvents } from 'discord.js';
 import { Client, GatewayIntentBits } from 'discord.js';
 
 import { disconnectDatabase, ensureDatabaseConnection, prisma } from '@/infrastructure/db/prisma';
 import { commandRegistry } from '@/presentation/commands';
-import { type AnyEventDescriptor, events } from '@/presentation/events';
+import { interactionCreateEvent } from '@/presentation/events/interactionCreate';
+import { readyEvent } from '@/presentation/events/ready';
+import type { EventDescriptor } from '@/presentation/events/types';
 import { env } from '@/shared/config/env';
 import { logger } from '@/shared/logger/pino';
 
@@ -18,22 +21,24 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 });
 
-const registerEvent = (descriptor: AnyEventDescriptor): void => {
-  const handler = async (...args: unknown[]) => {
-    try {
-      await (descriptor.execute as (...parameters: unknown[]) => unknown)(...args);
-    } catch (error) {
-      const referenceId = randomUUID();
-      logger.error({ event: descriptor.name, referenceId, err: error }, 'Error ejecutando evento.');
-    }
+const registerEvent = <K extends keyof ClientEvents>(descriptor: EventDescriptor<K>): void => {
+  const handler = (...args: ClientEvents[K]): void => {
+    void (async () => {
+      try {
+        await descriptor.execute(...args);
+      } catch (error) {
+        const referenceId = randomUUID();
+        logger.error({ event: descriptor.name, referenceId, err: error }, 'Error ejecutando evento.');
+      }
+    })();
   };
 
   if (descriptor.once) {
-    client.once(descriptor.name, handler as (...listenerArgs: unknown[]) => void);
+    client.once(descriptor.name, handler);
     return;
   }
 
-  client.on(descriptor.name, handler as (...listenerArgs: unknown[]) => void);
+  client.on(descriptor.name, handler);
 };
 
 const bootstrap = async (): Promise<void> => {
@@ -41,9 +46,8 @@ const bootstrap = async (): Promise<void> => {
 
   await ensureDatabaseConnection();
 
-  for (const event of events) {
-    registerEvent(event);
-  }
+  registerEvent(readyEvent);
+  registerEvent(interactionCreateEvent);
 
   logger.info({ commandCount: commandRegistry.size }, 'Comandos cargados en memoria.');
 
@@ -51,14 +55,14 @@ const bootstrap = async (): Promise<void> => {
     await client.login(env.DISCORD_TOKEN);
     logger.info('Cliente autenticado correctamente.');
   } catch (error) {
-    logger.fatal({ err: error }, 'No fue posible iniciar sesión en Discord.');
+    logger.fatal({ err: error }, 'No fue posible iniciar sesion en Discord.');
     await disconnectDatabase();
     process.exit(1);
   }
 };
 
 const shutdown = async (signal: NodeJS.Signals) => {
-  logger.warn({ signal }, 'Recibida señal de apagado, iniciando cierre controlado.');
+  logger.warn({ signal }, 'Recibida senal de apagado, iniciando cierre controlado.');
 
   try {
     await client.destroy();
@@ -84,11 +88,11 @@ process.on('unhandledRejection', (reason) => {
 });
 
 process.on('uncaughtException', (error) => {
-  logger.error({ err: error }, 'Excepción no controlada.');
+  logger.error({ err: error }, 'Excepcion no controlada.');
 });
 
 void bootstrap().catch(async (error) => {
-  logger.fatal({ err: error }, 'Fallo crítico durante el arranque.');
+  logger.fatal({ err: error }, 'Fallo critico durante el arranque.');
   await prisma.$disconnect();
   process.exit(1);
 });
