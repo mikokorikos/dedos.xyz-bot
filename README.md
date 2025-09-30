@@ -13,7 +13,9 @@ Reescritura completa del bot de Dedos Shop en TypeScript con arquitectura limpia
 ## 📦 Requisitos
 - Node.js 20 LTS
 - npm 9+ o pnpm/yarn equivalente
-- MySQL 8 (local vía Docker Compose opcional)
+
+- MySQL 8 (puede ser instalado manualmente o levantarlo con Docker Compose)
+
 
 ## 🔧 Instalación
 ```bash
@@ -21,10 +23,13 @@ npm install
 npm run db:generate
 ```
 
-Para levantar servicios auxiliares:
+Para desarrollo local puedes apoyarte en Docker Compose para la base de datos y Redis:
+
 ```bash
 npm run docker:up
 ```
+Si prefieres instalar MySQL y Redis de forma nativa, asegúrate de que las instancias
+estén accesibles usando las credenciales definidas en `DATABASE_URL` y `REDIS_URL`.
 
 ## ⚙️ Configuración
 Copia `.env.example` a `.env` y ajusta:
@@ -57,10 +62,35 @@ src/
 ```
 
 ## 🧪 Desarrollo diario
-1. `npm run docker:up`
+
+1. (Opcional) `npm run docker:up` para servicios locales.
+
 2. `npm run dev`
 3. `npm run deploy:commands`
 4. Ejecuta `npm run lint` y `npm run test` antes de cada commit.
+
+
+## 🖥️ Despliegue sin Docker
+
+Puedes ejecutar el bot directamente en un servidor sin contenedores siempre que
+dispongas de Node.js 20 y MySQL 8 (además de Redis si habilitas la cola de DMs):
+
+1. Crear un usuario de sistema dedicado, clonar el repositorio y copiar `.env`.
+2. Configurar `DATABASE_URL`, `DISCORD_TOKEN`, `DISCORD_CLIENT_ID` y demás variables.
+3. Instalar dependencias y compilar:
+   ```bash
+   npm ci
+   npm run db:migrate:prod
+   npm run build
+   ```
+4. Ejecutar `npm run start` o definir una unidad `systemd` que invoque
+   `node dist/index.js`.
+5. Mantener MySQL/Redis como servicios administrados por el sistema y automatizar
+   `npm run deploy:commands` cuando cambien los slash commands.
+
+Consulta [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) para pasos detallados y un ejemplo
+de unidad `systemd`.
+
 
 ## 📚 Documentación
 - [docs/COMMANDS.md](docs/COMMANDS.md): comandos disponibles y ejemplos.
