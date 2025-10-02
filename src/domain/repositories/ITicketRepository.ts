@@ -21,13 +21,22 @@ export interface CreateTicketData {
   readonly participants?: ReadonlyArray<TicketParticipantInput>;
 }
 
+export interface FindTicketsByOwnerOptions {
+  readonly statuses?: ReadonlyArray<TicketStatus>;
+  readonly type?: TicketType;
+  readonly limit?: number;
+  readonly guildId?: bigint;
+}
+
 export interface ITicketRepository extends Transactional<ITicketRepository> {
   create(data: CreateTicketData): Promise<Ticket>;
   findById(id: number): Promise<Ticket | null>;
   findByChannelId(channelId: bigint): Promise<Ticket | null>;
   findOpenByOwner(ownerId: bigint): Promise<readonly Ticket[]>;
+  findByOwner(ownerId: bigint, options?: FindTicketsByOwnerOptions): Promise<readonly Ticket[]>;
   update(ticket: Ticket): Promise<void>;
   delete(id: number): Promise<void>;
   countOpenByOwner(ownerId: bigint): Promise<number>;
+  countOpenByOwnerAndType(ownerId: bigint, type: TicketType): Promise<number>;
   isParticipant(ticketId: number, userId: bigint): Promise<boolean>;
 }

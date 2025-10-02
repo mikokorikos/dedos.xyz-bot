@@ -98,6 +98,38 @@ CREATE TABLE ticket_participants (
   CONSTRAINT fk_tp_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+CREATE TABLE ticket_type_policies (
+  type_id TINYINT UNSIGNED PRIMARY KEY,
+  max_open_per_user INT NOT NULL DEFAULT 1,
+  cooldown_seconds INT NOT NULL DEFAULT 0,
+  staff_role_id BIGINT UNSIGNED NULL,
+  requires_staff_approval TINYINT(1) NOT NULL DEFAULT 0,
+  CONSTRAINT fk_policy_type FOREIGN KEY (type_id) REFERENCES ticket_types(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE ticket_type_cooldowns (
+  type_id TINYINT UNSIGNED NOT NULL,
+  user_id BIGINT UNSIGNED NOT NULL,
+  last_opened_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (type_id, user_id),
+  INDEX idx_cooldown_user (user_id),
+  CONSTRAINT fk_cooldown_type FOREIGN KEY (type_id) REFERENCES ticket_type_policies(type_id) ON DELETE CASCADE,
+  CONSTRAINT fk_cooldown_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+INSERT INTO ticket_type_policies (type_id, max_open_per_user, cooldown_seconds, staff_role_id, requires_staff_approval)
+VALUES
+  (1, 2, 3600, NULL, 0),
+  (2, 2, 3600, NULL, 0),
+  (3, 1, 7200, NULL, 1),
+  (4, 1, 7200, NULL, 0),
+  (5, 1, 10800, NULL, 0)
+ON DUPLICATE KEY UPDATE
+  max_open_per_user = VALUES(max_open_per_user),
+  cooldown_seconds = VALUES(cooldown_seconds),
+  staff_role_id = VALUES(staff_role_id),
+  requires_staff_approval = VALUES(requires_staff_approval);
+
 -- =========================================
 -- Middlemen
 -- =========================================

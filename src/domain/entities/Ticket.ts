@@ -2,8 +2,7 @@
 // RUTA: src/domain/entities/Ticket.ts
 // ============================================================================
 
-import type { TicketType } from '@/domain/entities/types';
-import { TicketStatus } from '@/domain/entities/types';
+import { TicketStatus, TicketType } from '@/domain/entities/types';
 import { InvalidTicketStateError } from '@/shared/errors/domain.errors';
 
 export class Ticket {
@@ -24,7 +23,11 @@ export class Ticket {
   }
 
   public canBeClosed(): boolean {
-    return this.status === TicketStatus.CLAIMED || this.status === TicketStatus.CONFIRMED;
+    if (this.type === TicketType.MM) {
+      return this.status === TicketStatus.CLAIMED || this.status === TicketStatus.CONFIRMED;
+    }
+
+    return this.status !== TicketStatus.CLOSED;
   }
 
   public claim(middlemanId: bigint): void {

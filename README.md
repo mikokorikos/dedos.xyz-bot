@@ -41,6 +41,14 @@ Campos opcionales:
 - `REDIS_URL` si activas caché o colas
 - `SENTRY_DSN` y `OTEL_EXPORTER_OTLP_ENDPOINT` para observabilidad futura
 
+## 👥 Configuración para el staff
+
+1. Revisa las políticas por tipo en [docs/tickets.md](./docs/tickets.md) y ajusta los límites en la tabla `ticket_type_policies`.
+2. Si necesitas que sólo un rol pueda ver los tickets de cierto tipo, rellena `staff_role_id` con el snowflake del rol de Discord.
+3. Asegúrate de que los moderadores encargados de cierres tengan permisos de **Manage Guild** o **Moderate Members**; el comando `/ticket close`
+   valida estos permisos cuando se utiliza la bandera `staff_override`.
+4. Documenta para el equipo qué información deben solicitar en cada ticket (item, presupuesto, evidencia de pago) para garantizar cierres seguros.
+
 ## 🛠️ Scripts disponibles
 | Script | Descripción |
 | ------ | ----------- |

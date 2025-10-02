@@ -9,6 +9,7 @@ import type { TicketType } from '@/domain/entities/types';
 import { TicketStatus } from '@/domain/entities/types';
 import type {
   CreateTicketData,
+  FindTicketsByOwnerOptions,
   ITicketRepository,
   TicketParticipantInput,
 } from '@/domain/repositories/ITicketRepository';
@@ -95,6 +96,25 @@ export class PrismaTicketRepository implements ITicketRepository {
     return tickets.map((ticket) => this.toDomain(ticket));
   }
 
+  public async findByOwner(
+    ownerId: bigint,
+    options: FindTicketsByOwnerOptions = {},
+  ): Promise<readonly Ticket[]> {
+    const tickets = await this.prisma.ticket.findMany({
+      where: {
+        ownerId,
+        status: options.statuses ? { in: options.statuses } : undefined,
+        type: options.type,
+        guildId: options.guildId,
+      },
+      orderBy: { createdAt: 'desc' },
+      include: { middlemanClaim: true },
+      take: options.limit,
+    });
+
+    return tickets.map((ticket) => this.toDomain(ticket));
+  }
+
   public async update(ticket: Ticket): Promise<void> {
     await this.prisma.ticket.update({
       where: { id: ticket.id },
@@ -113,6 +133,16 @@ export class PrismaTicketRepository implements ITicketRepository {
     return this.prisma.ticket.count({
       where: {
         ownerId,
+        status: { in: OPEN_STATUSES },
+      },
+    });
+  }
+
+  public async countOpenByOwnerAndType(ownerId: bigint, type: TicketType): Promise<number> {
+    return this.prisma.ticket.count({
+      where: {
+        ownerId,
+        type,
         status: { in: OPEN_STATUSES },
       },
     });

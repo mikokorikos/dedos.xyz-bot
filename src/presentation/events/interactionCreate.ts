@@ -7,11 +7,16 @@ import type {
   ChatInputCommandInteraction,
   Interaction,
   ModalSubmitInteraction,
+  StringSelectMenuInteraction,
 } from 'discord.js';
 import { Events } from 'discord.js';
 
 import { commandRegistry } from '@/presentation/commands';
-import { buttonHandlers, modalHandlers } from '@/presentation/components/registry';
+import {
+  buttonHandlers,
+  modalHandlers,
+  selectHandlers,
+} from '@/presentation/components/registry';
 import { embedFactory } from '@/presentation/embeds/EmbedFactory';
 import type { EventDescriptor } from '@/presentation/events/types';
 import { mapErrorToDiscordResponse } from '@/shared/errors/discord-error-mapper';
@@ -78,6 +83,27 @@ const handleModal = async (interaction: ModalSubmitInteraction): Promise<void> =
   await handler(interaction);
 };
 
+const handleSelect = async (interaction: StringSelectMenuInteraction): Promise<void> => {
+  const handler = selectHandlers.get(interaction.customId);
+
+  if (!handler) {
+    logger.warn({ customId: interaction.customId }, 'No existe handler registrado para el menú select.');
+    await interaction.reply({
+      embeds: [
+        embedFactory.warning({
+          title: 'Acción no disponible',
+          description:
+            'Este menú ya no está activo. Ejecuta nuevamente el comando original para obtener una versión actualizada.',
+        }),
+      ],
+      ephemeral: true,
+    });
+    return;
+  }
+
+  await handler(interaction);
+};
+
 export const interactionCreateEvent: EventDescriptor<typeof Events.InteractionCreate> = {
   name: Events.InteractionCreate,
   once: false,
@@ -95,6 +121,11 @@ export const interactionCreateEvent: EventDescriptor<typeof Events.InteractionCr
 
       if (interaction.isModalSubmit()) {
         await handleModal(interaction);
+        return;
+      }
+
+      if (interaction.isStringSelectMenu()) {
+        await handleSelect(interaction);
         return;
       }
     } catch (error) {

@@ -170,6 +170,39 @@ export class DuplicateReviewError extends DedosError {
   }
 }
 
+export class TicketPolicyNotFoundError extends DedosError {
+  public constructor(type: string) {
+    super({
+      code: 'TICKET_POLICY_NOT_FOUND',
+      message: 'No existe una política configurada para este tipo de ticket.',
+      metadata: { type },
+      exposeMessage: false,
+    });
+  }
+}
+
+export class TicketCooldownActiveError extends DedosError {
+  public constructor(type: string, remainingSeconds: number) {
+    super({
+      code: 'TICKET_COOLDOWN_ACTIVE',
+      message: `Debes esperar ${remainingSeconds} segundos antes de abrir otro ticket de este tipo.`,
+      metadata: { type, remainingSeconds },
+      exposeMessage: true,
+    });
+  }
+}
+
+export class TicketParticipantNotFoundError extends DedosError {
+  public constructor(ticketId: number, userId: string) {
+    super({
+      code: 'TICKET_PARTICIPANT_NOT_FOUND',
+      message: 'No estás registrado como participante de este ticket.',
+      metadata: { ticketId, userId },
+      exposeMessage: true,
+    });
+  }
+}
+
 export class DiscordEntityCreationError extends DedosError {
   public constructor(entity: string, cause?: unknown) {
     super({

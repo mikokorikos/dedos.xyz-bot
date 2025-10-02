@@ -29,6 +29,30 @@ enum TicketStatus {
   CLOSED
 }
 
+model TicketTypePolicy {
+  type                 TicketType @id
+  maxOpenPerUser       Int        @map("max_open_per_user")
+  cooldownSeconds      Int        @map("cooldown_seconds")
+  staffRoleId          BigInt?    @map("staff_role_id")
+  requiresStaffApproval Boolean   @default(false) @map("requires_staff_approval")
+
+  cooldowns TicketTypeCooldown[]
+
+  @@map("ticket_type_policies")
+}
+
+model TicketTypeCooldown {
+  type         TicketType @map("type")
+  userId       BigInt     @map("user_id")
+  lastOpenedAt DateTime   @default(now()) @map("last_opened_at")
+
+  policy TicketTypePolicy @relation(fields: [type], references: [type], onDelete: Cascade)
+
+  @@id([type, userId])
+  @@index([userId])
+  @@map("ticket_type_cooldowns")
+}
+
 enum TradeStatus {
   PENDING
   ACTIVE
