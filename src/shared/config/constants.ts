@@ -34,6 +34,8 @@ export const COOLDOWNS = Object.freeze({
   middlemanRequest: 60_000,
 });
 
+export const MESSAGE_PREFIXES = Object.freeze(['!', '?'] as const);
+
 export const PERMISSIONS = Object.freeze({
   staff: [PermissionFlagsBits.ManageGuild, PermissionFlagsBits.ModerateMembers] as const,
   admin: [PermissionFlagsBits.Administrator] as const,

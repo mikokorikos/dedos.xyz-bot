@@ -15,7 +15,14 @@ import { env } from '@/shared/config/env';
 import { logger } from '@/shared/logger/pino';
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.DirectMessages,
+  ],
 });
 
 const registerEvent = (descriptor: AnyEventDescriptor): void => {
@@ -36,6 +43,12 @@ const registerEvent = (descriptor: AnyEventDescriptor): void => {
   client.on(descriptor.name, handler as (...listenerArgs: unknown[]) => void);
 };
 
+/**
+ * Arrancamos solicitando intents de miembros, mensajes, contenido y reacciones
+ * porque el bot combina comandos con prefijo en texto, automatiza bienvenidas y
+ * observa reacciones para flujos de tickets. `DirectMessages` permite asistir a
+ * usuarios que abren conversaciones privadas durante esos procesos.
+ */
 const bootstrap = async (): Promise<void> => {
   logger.info({ env: env.NODE_ENV }, 'Iniciando Dedos Bot...');
 
