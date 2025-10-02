@@ -95,6 +95,17 @@ export class PrismaTicketRepository implements ITicketRepository {
     return tickets.map((ticket) => this.toDomain(ticket));
   }
 
+  public async findRecentByOwner(ownerId: bigint, limit = 10): Promise<readonly Ticket[]> {
+    const tickets = await this.prisma.ticket.findMany({
+      where: { ownerId },
+      include: { middlemanClaim: true },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+
+    return tickets.map((ticket) => this.toDomain(ticket));
+  }
+
   public async update(ticket: Ticket): Promise<void> {
     await this.prisma.ticket.update({
       where: { id: ticket.id },
