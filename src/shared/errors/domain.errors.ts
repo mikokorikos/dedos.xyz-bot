@@ -170,6 +170,28 @@ export class DuplicateReviewError extends DedosError {
   }
 }
 
+export class InvalidTradeParticipantError extends DedosError {
+  public constructor(userId: string) {
+    super({
+      code: 'INVALID_TRADE_PARTICIPANT',
+      message: 'El usuario indicado no forma parte de la transacción.',
+      metadata: { userId },
+      exposeMessage: true,
+    });
+  }
+}
+
+export class TradeNotFoundError extends DedosError {
+  public constructor(tradeId: string) {
+    super({
+      code: 'TRADE_NOT_FOUND',
+      message: 'La transacción solicitada no existe.',
+      metadata: { tradeId },
+      exposeMessage: true,
+    });
+  }
+}
+
 export class DiscordEntityCreationError extends DedosError {
   public constructor(entity: string, cause?: unknown) {
     super({

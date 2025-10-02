@@ -2,7 +2,7 @@
 // RUTA: src/domain/repositories/ITradeRepository.ts
 // ============================================================================
 
-import type { Trade } from '@/domain/entities/Trade';
+import type { Trade, TradeParticipantFinalization } from '@/domain/entities/Trade';
 import type { TradeItem } from '@/domain/entities/types';
 import type { Transactional } from '@/domain/repositories/transaction';
 import type { TradeStatus } from '@/domain/value-objects/TradeStatus';
@@ -23,5 +23,9 @@ export interface ITradeRepository extends Transactional<ITradeRepository> {
   findByTicketId(ticketId: number): Promise<readonly Trade[]>;
   findByUserId(userId: bigint): Promise<readonly Trade[]>;
   update(trade: Trade): Promise<void>;
+  confirmParticipant(tradeId: number, userId: bigint, confirmedAt?: Date): Promise<void>;
+  cancelParticipant(tradeId: number, userId: bigint): Promise<void>;
+  replaceItems(tradeId: number, items: ReadonlyArray<TradeItem>): Promise<void>;
+  listParticipantFinalizations(ticketId: number): Promise<readonly TradeParticipantFinalization[]>;
   delete(id: number): Promise<void>;
 }
