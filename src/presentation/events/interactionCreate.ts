@@ -7,11 +7,16 @@ import type {
   ChatInputCommandInteraction,
   Interaction,
   ModalSubmitInteraction,
+  StringSelectMenuInteraction,
 } from 'discord.js';
-import { Events } from 'discord.js';
+import { Collection, Events } from 'discord.js';
 
 import { commandRegistry } from '@/presentation/commands';
-import { buttonHandlers, modalHandlers } from '@/presentation/components/registry';
+import {
+  buttonHandlers,
+  modalHandlers,
+  selectMenuHandlers,
+} from '@/presentation/components/registry';
 import { embedFactory } from '@/presentation/embeds/EmbedFactory';
 import type { EventDescriptor } from '@/presentation/events/types';
 import { mapErrorToDiscordResponse } from '@/shared/errors/discord-error-mapper';
@@ -37,8 +42,25 @@ const handleChatInput = async (interaction: ChatInputCommandInteraction): Promis
   await command.execute(interaction);
 };
 
+const resolveHandler = <T>(
+  customId: string,
+  collection: Collection<string, T>,
+): T | undefined => {
+  const direct = collection.get(customId);
+  if (direct) {
+    return direct;
+  }
+
+  if (customId.includes('|')) {
+    const baseId = customId.slice(0, customId.indexOf('|'));
+    return collection.get(baseId);
+  }
+
+  return undefined;
+};
+
 const handleButton = async (interaction: ButtonInteraction): Promise<void> => {
-  const handler = buttonHandlers.get(interaction.customId);
+  const handler = resolveHandler(interaction.customId, buttonHandlers);
 
   if (!handler) {
     logger.warn({ customId: interaction.customId }, 'No existe handler registrado para el botón.');
@@ -78,6 +100,27 @@ const handleModal = async (interaction: ModalSubmitInteraction): Promise<void> =
   await handler(interaction);
 };
 
+const handleSelectMenu = async (interaction: StringSelectMenuInteraction): Promise<void> => {
+  const handler = resolveHandler(interaction.customId, selectMenuHandlers);
+
+  if (!handler) {
+    logger.warn({ customId: interaction.customId }, 'No existe handler registrado para el select menu.');
+    await interaction.reply({
+      embeds: [
+        embedFactory.warning({
+          title: 'Selección no disponible',
+          description:
+            'Este menú ya no está activo. Ejecuta nuevamente el comando para obtener una versión actualizada.',
+        }),
+      ],
+      ephemeral: true,
+    });
+    return;
+  }
+
+  await handler(interaction);
+};
+
 export const interactionCreateEvent: EventDescriptor<typeof Events.InteractionCreate> = {
   name: Events.InteractionCreate,
   once: false,
@@ -95,6 +138,11 @@ export const interactionCreateEvent: EventDescriptor<typeof Events.InteractionCr
 
       if (interaction.isModalSubmit()) {
         await handleModal(interaction);
+        return;
+      }
+
+      if (interaction.isStringSelectMenu()) {
+        await handleSelectMenu(interaction);
         return;
       }
     } catch (error) {
