@@ -6,9 +6,10 @@ import { commandRegistry, getRegisteredCommands, registerCommands, serializeComm
 import { helpCommand } from '@/presentation/commands/general/help';
 import { pingCommand } from '@/presentation/commands/general/ping';
 import { middlemanCommand } from '@/presentation/commands/middleman/middleman';
+import { ticketCommand } from '@/presentation/commands/tickets/ticket';
 import type { Command } from '@/presentation/commands/types';
 
-const commands: Command[] = [pingCommand, helpCommand, middlemanCommand];
+const commands: Command[] = [pingCommand, helpCommand, middlemanCommand, ticketCommand];
 
 registerCommands(commands);
 

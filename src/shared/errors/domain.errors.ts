@@ -81,6 +81,17 @@ export class TooManyOpenTicketsError extends DedosError {
   }
 }
 
+export class TicketCooldownError extends DedosError {
+  public constructor(availableAt: Date) {
+    super({
+      code: 'TICKET_COOLDOWN_ACTIVE',
+      message: 'Debes esperar antes de abrir otro ticket de este tipo.',
+      metadata: { availableAt: availableAt.toISOString() },
+      exposeMessage: true,
+    });
+  }
+}
+
 export class InvalidTradeStateError extends DedosError {
   public constructor(current: unknown, expected: unknown) {
     super({

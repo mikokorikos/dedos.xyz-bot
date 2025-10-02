@@ -26,6 +26,7 @@ export interface ITicketRepository extends Transactional<ITicketRepository> {
   findById(id: number): Promise<Ticket | null>;
   findByChannelId(channelId: bigint): Promise<Ticket | null>;
   findOpenByOwner(ownerId: bigint): Promise<readonly Ticket[]>;
+  findRecentByOwner(ownerId: bigint, limit?: number): Promise<readonly Ticket[]>;
   update(ticket: Ticket): Promise<void>;
   delete(id: number): Promise<void>;
   countOpenByOwner(ownerId: bigint): Promise<number>;
