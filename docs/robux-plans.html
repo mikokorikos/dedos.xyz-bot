@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Planes de Robux • Dedos.xyz</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        color-scheme: dark light;
+        --bg-primary: #04050a;
+        --bg-elevated: rgba(12, 16, 32, 0.65);
+        --bg-card: rgba(21, 28, 55, 0.85);
+        --bg-chip: rgba(88, 101, 242, 0.2);
+        --bg-chip-alt: rgba(88, 101, 242, 0.09);
+        --border-card: rgba(116, 130, 255, 0.35);
+        --border-card-strong: rgba(116, 130, 255, 0.75);
+        --text-primary: #f4f6ff;
+        --text-secondary: rgba(204, 208, 255, 0.75);
+        --text-muted: rgba(204, 208, 255, 0.6);
+        --accent-primary: #5865f2;
+        --accent-secondary: #3ba55d;
+        --accent-warning: #fbbf24;
+        --accent-danger: #ef4444;
+        --accent-info: #60a5fa;
+        --shadow-card: 0 18px 40px rgba(8, 11, 26, 0.45);
+        --radius-lg: 28px;
+        --radius-md: 16px;
+        --radius-sm: 999px;
+        --max-width: min(1160px, 92vw);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+          sans-serif;
+        background: radial-gradient(circle at top, rgba(88, 101, 242, 0.25), transparent 55%),
+          radial-gradient(circle at 20% 40%, rgba(59, 165, 93, 0.25), transparent 50%),
+          radial-gradient(circle at 80% 10%, rgba(96, 165, 250, 0.35), transparent 45%),
+          var(--bg-primary);
+        color: var(--text-primary);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 64px 0 120px;
+        gap: 64px;
+      }
+
+      header {
+        width: var(--max-width);
+        display: grid;
+        gap: 24px;
+        text-align: center;
+      }
+
+      header h1 {
+        font-size: clamp(2.35rem, 4vw, 3.6rem);
+        margin: 0;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+      }
+
+      header p {
+        margin: 0 auto;
+        max-width: 720px;
+        font-size: clamp(1.05rem, 2vw, 1.25rem);
+        color: var(--text-secondary);
+        line-height: 1.7;
+      }
+
+      .chip-row {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .chip {
+        padding: 10px 18px;
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        background: var(--bg-chip);
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        letter-spacing: 0.01em;
+      }
+
+      .chip--outline {
+        background: var(--bg-chip-alt);
+        color: var(--text-secondary);
+      }
+
+      main {
+        width: var(--max-width);
+        display: grid;
+        gap: 48px;
+      }
+
+      .plans-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 28px;
+      }
+
+      .plan-card {
+        position: relative;
+        padding: 32px 28px;
+        border-radius: var(--radius-lg);
+        background: var(--bg-card);
+        border: 1px solid var(--border-card);
+        box-shadow: var(--shadow-card);
+        display: grid;
+        gap: 20px;
+        overflow: hidden;
+        isolation: isolate;
+      }
+
+      .plan-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(145deg, rgba(88, 101, 242, 0.15), transparent 55%);
+        opacity: 0;
+        transition: opacity 200ms ease;
+        pointer-events: none;
+      }
+
+      .plan-card:hover::before {
+        opacity: 1;
+      }
+
+      .plan-card--recommended {
+        border: 1.5px solid var(--border-card-strong);
+        background: linear-gradient(180deg, rgba(88, 101, 242, 0.22), rgba(12, 16, 32, 0.9));
+        transform: translateY(0);
+        transition: transform 200ms ease;
+      }
+
+      .plan-card--recommended:hover {
+        transform: translateY(-6px);
+      }
+
+      .plan-chip-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .plan-title {
+        margin: 0;
+        font-size: 1.65rem;
+        font-weight: 700;
+      }
+
+      .plan-price {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .plan-price strong {
+        font-size: 2rem;
+        letter-spacing: -0.02em;
+      }
+
+      .price-note {
+        font-size: 0.95rem;
+        color: var(--text-muted);
+      }
+
+      .requirements {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 10px;
+      }
+
+      .requirements li {
+        position: relative;
+        padding-left: 28px;
+        color: var(--text-secondary);
+        line-height: 1.55;
+      }
+
+      .requirements li::before {
+        content: '✔';
+        position: absolute;
+        left: 0;
+        top: 0;
+        color: var(--accent-secondary);
+        font-weight: 700;
+      }
+
+      .plan-footer {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .plan-footer a {
+        color: var(--accent-info);
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .plan-tag {
+        font-size: 0.75rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: var(--radius-sm);
+        padding: 6px 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .plan-tag--recommended {
+        background: rgba(88, 101, 242, 0.35);
+        color: var(--text-primary);
+      }
+
+      .plan-tag--warning {
+        background: rgba(251, 191, 36, 0.2);
+        color: #fcd34d;
+      }
+
+      .plan-tag--danger {
+        background: rgba(239, 68, 68, 0.2);
+        color: #fca5a5;
+      }
+
+      .cta-section {
+        width: var(--max-width);
+        border-radius: var(--radius-lg);
+        background: linear-gradient(140deg, rgba(88, 101, 242, 0.3), rgba(12, 16, 32, 0.95));
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 40px clamp(24px, 4vw, 48px);
+        display: grid;
+        gap: 24px;
+        box-shadow: var(--shadow-card);
+      }
+
+      .cta-content {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        text-align: center;
+      }
+
+      .cta-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        align-items: center;
+      }
+
+      @media (min-width: 720px) {
+        .cta-content {
+          text-align: left;
+        }
+
+        .cta-buttons {
+          flex-direction: row;
+          justify-content: center;
+        }
+      }
+
+      .button {
+        border: none;
+        border-radius: var(--radius-sm);
+        font-weight: 700;
+        padding: 14px 26px;
+        font-size: 1rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        transition: transform 150ms ease, box-shadow 150ms ease;
+        text-decoration: none;
+      }
+
+      .button--primary {
+        background: linear-gradient(135deg, var(--accent-primary), #3943c6);
+        color: white;
+        box-shadow: 0 12px 24px rgba(88, 101, 242, 0.35);
+      }
+
+      .button--primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 36px rgba(88, 101, 242, 0.4);
+      }
+
+      .button--secondary {
+        background: rgba(255, 255, 255, 0.08);
+        color: var(--text-primary);
+      }
+
+      .conversion-pill {
+        align-self: center;
+        padding: 10px 18px;
+        border-radius: var(--radius-sm);
+        background: rgba(59, 165, 93, 0.18);
+        color: #a7f3d0;
+        font-weight: 600;
+        font-size: 0.95rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      footer {
+        margin-top: auto;
+        padding-bottom: 24px;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+      }
+
+      .divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.14), transparent);
+        width: 100%;
+      }
+
+      a.link {
+        color: var(--accent-info);
+        font-weight: 600;
+        text-decoration: none;
+      }
+
+      .plan-description {
+        color: var(--text-secondary);
+        margin: 0;
+        line-height: 1.6;
+      }
+
+      .plan-chip-row .chip {
+        font-size: 0.85rem;
+        padding: 6px 14px;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .plan-chip-row .chip--success {
+        background: rgba(59, 165, 93, 0.2);
+        color: #bbf7d0;
+      }
+
+      .plan-chip-row .chip--warning {
+        background: rgba(251, 191, 36, 0.2);
+        color: #fde68a;
+      }
+
+      .plan-chip-row .chip--danger {
+        background: rgba(239, 68, 68, 0.2);
+        color: #fecaca;
+      }
+
+      .highlight {
+        color: var(--accent-secondary);
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="chip-row">
+        <span class="chip">⚡ Entrega inmediata garantizada</span>
+        <span class="chip chip--outline">Precios auditados todos los días</span>
+        <span class="chip chip--outline">Soporte dedicado en español</span>
+      </div>
+      <h1>Planes de Robux al mejor precio en Dedos.xyz</h1>
+      <p>
+        Elige el método que mejor se adapte a tu cuenta de Roblox. Nuestros planes incluyen
+        soporte 1:1, seguimiento transparente y la conversión más competitiva para que recibas
+        tus Robux sin complicaciones.
+      </p>
+    </header>
+
+    <main>
+      <section class="plans-grid" aria-label="Planes disponibles">
+        <article class="plan-card plan-card--recommended">
+          <span class="plan-tag plan-tag--recommended">Recomendado · Popular</span>
+          <div class="plan-price">
+            <strong>1000 Robux = 125 MXN</strong>
+            <span class="price-note" data-price="125" data-plan="grupo"
+              >≈ <span class="usd-price">Cargando precio en USD…</span></span
+            >
+          </div>
+          <h2 class="plan-title">Compra por grupo</h2>
+          <p class="plan-description">
+            La opción preferida por la comunidad. Dedos.xyz realiza la transferencia directa a
+            través de nuestro grupo oficial y recibes tus Robux en cuestión de minutos.
+          </p>
+          <div class="plan-chip-row">
+            <span class="chip chip--success">Instantáneo</span>
+            <span class="chip">Sin comisiones ocultas</span>
+            <span class="chip">Pago seguro</span>
+          </div>
+          <div class="divider"></div>
+          <div>
+            <h3 class="plan-title" style="font-size: 1.1rem; margin-bottom: 12px">Requisitos</h3>
+            <ul class="requirements">
+              <li>Tener mínimo <span class="highlight">14 días</span> de antigüedad en tu grupo.</li>
+              <li>Unirte al <a class="link" href="https://www.roblox.com/groups/" target="_blank" rel="noreferrer">grupo oficial de Dedos.xyz</a>.</li>
+              <li>Confirmar tu usuario de Roblox durante la compra.</li>
+            </ul>
+          </div>
+          <div class="plan-footer">
+            <a href="https://www.roblox.com/groups/" target="_blank" rel="noreferrer"
+              >Ir al grupo de Roblox ↗</a
+            >
+            <span class="price-note">Entrega inmediata tras confirmar tu pago.</span>
+          </div>
+        </article>
+
+        <article class="plan-card">
+          <span class="plan-tag plan-tag--warning">Alternativa recomendada</span>
+          <div class="plan-price">
+            <strong>1000 Robux = 126 MXN</strong>
+            <span class="price-note" data-price="126" data-plan="regalo"
+              >≈ <span class="usd-price">Cargando precio en USD…</span></span
+            >
+          </div>
+          <h2 class="plan-title">Regalo por juego</h2>
+          <p class="plan-description">
+            Ideal para obtener artículos premium en tu título favorito. Compra cualquier pase de
+            juego, artículo o producto en tendencia y nosotros lo enviamos directamente desde la
+            tienda oficial.
+          </p>
+          <div class="plan-chip-row">
+            <span class="chip chip--success">Sin espera</span>
+            <span class="chip">Gamepasses y artículos especiales</span>
+            <span class="chip">Personalizable</span>
+          </div>
+          <div class="divider"></div>
+          <div>
+            <h3 class="plan-title" style="font-size: 1.1rem; margin-bottom: 12px">Requisitos</h3>
+            <ul class="requirements">
+              <li>Selecciona un juego que permita regalar <span class="highlight">gamepasses</span> o items.</li>
+              <li>Indícanos el enlace del producto dentro del juego.</li>
+              <li>No requiere tiempo de espera previo ni cambios en tu cuenta.</li>
+            </ul>
+          </div>
+          <div class="plan-footer">
+            <a href="https://www.roblox.com/discover" target="_blank" rel="noreferrer"
+              >Explorar juegos para regalar ↗</a
+            >
+            <span class="price-note">Los Robux se convierten en el artículo seleccionado al instante.</span>
+          </div>
+        </article>
+
+        <article class="plan-card">
+          <span class="plan-tag plan-tag--danger">Menos recomendada</span>
+          <div class="plan-price">
+            <strong>1000 Robux = 136.99 MXN</strong>
+            <span class="price-note" data-price="136.99" data-plan="gamepass"
+              >≈ <span class="usd-price">Cargando precio en USD…</span></span
+            >
+          </div>
+          <h2 class="plan-title">Gamepass personal</h2>
+          <p class="plan-description">
+            Usa tu propio gamepass para recibir el pago. Es una alternativa para cuentas nuevas,
+            pero Roblox retiene los fondos durante varios días antes de liberarlos.
+          </p>
+          <div class="plan-chip-row">
+            <span class="chip chip--warning">Pago diferido</span>
+            <span class="chip chip--danger">Mayor comisión</span>
+            <span class="chip">Disponibilidad limitada</span>
+          </div>
+          <div class="divider"></div>
+          <div>
+            <h3 class="plan-title" style="font-size: 1.1rem; margin-bottom: 12px">Requisitos</h3>
+            <ul class="requirements">
+              <li>Contar con gamepasses activos de <span class="highlight">500, 100 y 29 Robux</span>.</li>
+              <li>Los precios deben estar sin ajustes regionales.</li>
+              <li>Tiempo de entrega estimado: 5 a 10 días por las políticas de Roblox.</li>
+            </ul>
+          </div>
+          <div class="plan-footer">
+            <span class="price-note"
+              >Entrega estimada: algunas horas tras el pago + liberación oficial de Roblox.</span
+            >
+          </div>
+        </article>
+      </section>
+
+      <section class="cta-section" aria-label="Pasos para comprar">
+        <div class="cta-content">
+          <h2 style="margin: 0; font-size: clamp(1.8rem, 3vw, 2.4rem); font-weight: 800">
+            ¿Listo para tu próxima recarga?
+          </h2>
+          <p style="margin: 0; color: var(--text-secondary); line-height: 1.7">
+            Únete a nuestro Discord oficial, abre un ticket y un asesor te guiará durante todo el
+            proceso. Si presentas inconvenientes con Discord, revisa la guía rápida que preparamos
+            para ti.
+          </p>
+        </div>
+        <div class="cta-buttons">
+          <a
+            class="button button--primary"
+            href="https://discord.gg/dedos"
+            target="_blank"
+            rel="noreferrer"
+          >
+            💬 Entrar al Discord y abrir ticket
+          </a>
+          <a
+            class="button button--secondary"
+            href="https://dedos.xyz/soporte-discord"
+            target="_blank"
+            rel="noreferrer"
+          >
+            ❔ Tengo problemas con Discord
+          </a>
+        </div>
+        <div class="conversion-pill" id="conversion-pill" hidden>
+          💱 Tipo de cambio en vivo: <span id="exchange-rate">–</span> MXN → USD
+        </div>
+      </section>
+    </main>
+
+    <footer>Dedos.xyz • Servicio verificado para compras de Robux en LATAM.</footer>
+
+    <script>
+      const priceElements = document.querySelectorAll('[data-price]');
+      const conversionPill = document.getElementById('conversion-pill');
+      const exchangeRateText = document.getElementById('exchange-rate');
+
+      const formatUSD = (value) =>
+        new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(value);
+
+      const formatRate = (value) => value.toFixed(4);
+
+      async function updateExchangeRates() {
+        const endpoint = 'https://open.er-api.com/v6/latest/MXN';
+
+        try {
+          const response = await fetch(endpoint);
+          if (!response.ok) {
+            throw new Error('No se pudo obtener el tipo de cambio.');
+          }
+
+          const data = await response.json();
+          const usdRate = data?.rates?.USD;
+
+          if (!usdRate) {
+            throw new Error('Respuesta de API inválida.');
+          }
+
+          exchangeRateText.textContent = formatRate(usdRate);
+          conversionPill.hidden = false;
+
+          priceElements.forEach((element) => {
+            const price = Number.parseFloat(element.dataset.price ?? '0');
+            const usdValue = price * usdRate;
+            const usdLabel = element.querySelector('.usd-price');
+
+            if (usdLabel) {
+              usdLabel.textContent = formatUSD(usdValue);
+            }
+          });
+        } catch (error) {
+          priceElements.forEach((element) => {
+            const usdLabel = element.querySelector('.usd-price');
+            if (usdLabel) {
+              usdLabel.textContent = 'Consulta el tipo de cambio con soporte';
+            }
+          });
+          console.error(error);
+        }
+      }
+
+      updateExchangeRates();
+    </script>
+  </body>
+</html>
