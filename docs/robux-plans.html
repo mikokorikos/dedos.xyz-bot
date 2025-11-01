@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Planes de Robux • Dedos.xyz</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/@tabler/icons-webfont@latest/tabler-icons.min.css"
+    />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg-body: #03040a;
+        --bg-overlay: rgba(8, 12, 24, 0.7);
+        --bg-card: rgba(16, 21, 43, 0.75);
+        --bg-card-strong: rgba(30, 37, 74, 0.82);
+        --gradient-primary: linear-gradient(145deg, #5960f1 0%, #2b7fff 50%, #3fa980 100%);
+        --gradient-accent: linear-gradient(120deg, rgba(89, 96, 241, 0.18), rgba(29, 185, 84, 0.12));
+        --border-soft: rgba(255, 255, 255, 0.12);
+        --border-strong: rgba(123, 142, 255, 0.75);
+        --text-primary: #f4f6ff;
+        --text-secondary: rgba(220, 226, 255, 0.75);
+        --text-muted: rgba(199, 205, 240, 0.6);
+        --accent-primary: #5960f1;
+        --accent-success: #3ba55d;
+        --accent-warning: #fbbf24;
+        --accent-danger: #ef4444;
+        --shadow-soft: 0 24px 70px rgba(3, 6, 18, 0.55);
+        --radius-xl: 32px;
+        --radius-lg: 24px;
+        --radius-md: 16px;
+        --radius-pill: 999px;
+        --max-width: min(1120px, 94vw);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+          sans-serif;
+        color: var(--text-primary);
+        background: var(--bg-body);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: clamp(56px, 7vw, 96px);
+        padding: clamp(40px, 8vw, 80px) 0 120px;
+        position: relative;
+        overflow-x: hidden;
+      }
+
+      body::before,
+      body::after {
+        content: '';
+        position: fixed;
+        width: clamp(480px, 65vw, 720px);
+        height: clamp(480px, 65vw, 720px);
+        background: radial-gradient(circle, rgba(89, 96, 241, 0.4), transparent 70%);
+        filter: blur(0px);
+        z-index: -2;
+        opacity: 0.9;
+        animation: floatOrb 22s ease-in-out infinite;
+        pointer-events: none;
+      }
+
+      body::before {
+        top: -220px;
+        left: -180px;
+      }
+
+      body::after {
+        background: radial-gradient(circle, rgba(63, 169, 128, 0.38), transparent 68%);
+        bottom: -260px;
+        right: -200px;
+        animation-delay: -8s;
+      }
+
+      @keyframes floatOrb {
+        0%,
+        100% {
+          transform: translate3d(0, 0, 0) scale(1);
+        }
+        50% {
+          transform: translate3d(40px, -40px, 0) scale(1.05);
+        }
+      }
+
+      .background-grid {
+        position: fixed;
+        inset: 0;
+        background-image: radial-gradient(
+            circle at 20% 20%,
+            rgba(91, 143, 255, 0.16) 0,
+            transparent 55%
+          ),
+          radial-gradient(circle at 80% 10%, rgba(114, 220, 193, 0.14) 0, transparent 45%),
+          linear-gradient(
+            120deg,
+            rgba(255, 255, 255, 0.04) 0,
+            rgba(255, 255, 255, 0.01) 40%,
+            transparent 60%
+          );
+        background-size: cover;
+        z-index: -1;
+        mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.65));
+        animation: gridGlow 18s ease-in-out infinite;
+        pointer-events: none;
+      }
+
+      @keyframes gridGlow {
+        0%,
+        100% {
+          opacity: 0.72;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.95;
+          transform: scale(1.03);
+        }
+      }
+
+      .noise-overlay {
+        position: fixed;
+        inset: 0;
+        background-image: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" viewBox="0 0 400 400"%3E%3Cfilter id="n" x="0" y="0" width="100%25" height="100%25"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="1.25" numOctaves="2"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23n)" opacity="0.12"/%3E%3C/svg%3E');
+        opacity: 0.32;
+        mix-blend-mode: soft-light;
+        z-index: -1;
+        pointer-events: none;
+      }
+
+      header {
+        width: var(--max-width);
+        display: grid;
+        gap: 28px;
+        text-align: center;
+        z-index: 1;
+      }
+
+      header h1 {
+        margin: 0;
+        font-size: clamp(2.4rem, 5vw, 3.8rem);
+        font-weight: 800;
+        letter-spacing: -0.045em;
+      }
+
+      header p {
+        margin: 0 auto;
+        max-width: 760px;
+        font-size: clamp(1rem, 2.3vw, 1.2rem);
+        line-height: 1.75;
+        color: var(--text-secondary);
+      }
+
+      .chip-row {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border-radius: var(--radius-pill);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: var(--text-primary);
+        letter-spacing: 0.01em;
+        backdrop-filter: blur(8px);
+      }
+
+      .chip--outline {
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--text-secondary);
+      }
+
+      main {
+        width: var(--max-width);
+        display: grid;
+        gap: clamp(48px, 6vw, 72px);
+        position: relative;
+        z-index: 1;
+      }
+
+      .plans-grid {
+        display: grid;
+        gap: 28px;
+      }
+
+      @media (min-width: 960px) {
+        .plans-grid {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+      }
+
+      .plan-card {
+        position: relative;
+        padding: clamp(28px, 4vw, 36px);
+        border-radius: var(--radius-xl);
+        background: var(--bg-card);
+        border: 1px solid var(--border-soft);
+        display: grid;
+        gap: 22px;
+        box-shadow: var(--shadow-soft);
+        backdrop-filter: blur(18px);
+        transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+        overflow: hidden;
+        isolation: isolate;
+      }
+
+      .plan-card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: var(--gradient-accent);
+        opacity: 0;
+        transition: opacity 220ms ease;
+        z-index: -1;
+      }
+
+      .plan-card:hover {
+        transform: translateY(-8px);
+        border-color: rgba(137, 156, 255, 0.6);
+        box-shadow: 0 30px 80px rgba(10, 16, 40, 0.55);
+      }
+
+      .plan-card:hover::after {
+        opacity: 1;
+      }
+
+      .plan-card--recommended {
+        background: var(--bg-card-strong);
+        border: 1.5px solid var(--border-strong);
+      }
+
+      .plan-card__header {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+
+      .plan-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 56px;
+        border-radius: 18px;
+        background: rgba(89, 96, 241, 0.16);
+        color: #c6cbff;
+        font-size: 1.8rem;
+      }
+
+      .plan-card--recommended .plan-icon {
+        background: rgba(89, 96, 241, 0.22);
+        color: #f4f6ff;
+      }
+
+      .plan-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: var(--radius-pill);
+        background: rgba(255, 255, 255, 0.08);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+      }
+
+      .plan-tag--recommended {
+        background: rgba(89, 96, 241, 0.26);
+        color: var(--text-primary);
+      }
+
+      .plan-tag--warning {
+        background: rgba(251, 191, 36, 0.22);
+        color: #fde68a;
+      }
+
+      .plan-tag--danger {
+        background: rgba(239, 68, 68, 0.22);
+        color: #fecaca;
+      }
+
+      .plan-title {
+        margin: 4px 0 6px;
+        font-size: 1.65rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      .plan-description {
+        margin: 0;
+        color: var(--text-secondary);
+        line-height: 1.7;
+      }
+
+      .feature-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .feature-pill {
+        padding: 6px 14px;
+        border-radius: var(--radius-pill);
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text-secondary);
+      }
+
+      .feature-pill--success {
+        background: rgba(59, 165, 93, 0.26);
+        color: #bbf7d0;
+      }
+
+      .feature-pill--warning {
+        background: rgba(251, 191, 36, 0.24);
+        color: #fde68a;
+      }
+
+      .feature-pill--danger {
+        background: rgba(239, 68, 68, 0.24);
+        color: #fecaca;
+      }
+
+      .price-box {
+        display: grid;
+        gap: 18px;
+        padding: 20px;
+        border-radius: var(--radius-lg);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(14, 19, 39, 0.78);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .price-box::before {
+        content: '';
+        position: absolute;
+        inset: -20% -10% auto auto;
+        width: 160px;
+        height: 160px;
+        background: radial-gradient(circle, rgba(89, 96, 241, 0.32), transparent 70%);
+        opacity: 0.8;
+        transform: translateY(-20px);
+      }
+
+      .price-header {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        position: relative;
+        z-index: 1;
+      }
+
+      .price-header span {
+        font-size: 0.95rem;
+        color: var(--text-muted);
+      }
+
+      .price-header strong {
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+
+      .exchange-card {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 16px;
+        border-radius: var(--radius-md);
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        position: relative;
+        z-index: 1;
+      }
+
+      .exchange-icon {
+        font-size: 1.4rem;
+        color: #c4d1ff;
+      }
+
+      .usd-amount {
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--text-primary);
+      }
+
+      .exchange-rate {
+        display: block;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        margin-top: 4px;
+      }
+
+      .requirements {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 12px;
+      }
+
+      .requirements li {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 12px;
+        align-items: flex-start;
+        color: var(--text-secondary);
+        line-height: 1.6;
+      }
+
+      .requirements i {
+        font-size: 1.1rem;
+        color: var(--accent-success);
+        margin-top: 2px;
+      }
+
+      .highlight {
+        color: var(--accent-success);
+        font-weight: 700;
+      }
+
+      .inline-link {
+        color: #cbd0ff;
+        font-weight: 600;
+        text-decoration: none;
+        border-bottom: 1px solid transparent;
+        transition: border-color 140ms ease;
+      }
+
+      .inline-link:hover {
+        border-color: rgba(203, 208, 255, 0.65);
+      }
+
+      .plan-meta {
+        display: grid;
+        gap: 12px;
+      }
+
+      .pill-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 12px 18px;
+        border-radius: var(--radius-pill);
+        background: rgba(89, 96, 241, 0.18);
+        color: #cbd0ff;
+        font-weight: 600;
+        text-decoration: none;
+        transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+      }
+
+      .pill-link:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 32px rgba(18, 22, 45, 0.45);
+        background: rgba(89, 96, 241, 0.26);
+      }
+
+      .note {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+      }
+
+      .divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+        margin: -4px 0 4px;
+      }
+
+      .rate-banner {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 18px;
+        align-items: center;
+        padding: 22px 24px;
+        border-radius: var(--radius-lg);
+        background: rgba(12, 17, 34, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: var(--shadow-soft);
+        backdrop-filter: blur(18px);
+      }
+
+      .rate-icon {
+        font-size: 1.6rem;
+        color: #a5b4ff;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 52px;
+        height: 52px;
+        border-radius: 18px;
+        background: rgba(89, 96, 241, 0.18);
+      }
+
+      .rate-label {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        color: var(--text-muted);
+      }
+
+      .rate-value {
+        font-size: 1.45rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+
+      .rate-updated {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+      }
+
+      .cta-section {
+        display: grid;
+        gap: 24px;
+        padding: clamp(28px, 6vw, 42px);
+        border-radius: var(--radius-xl);
+        background: linear-gradient(140deg, rgba(89, 96, 241, 0.32), rgba(7, 11, 28, 0.92));
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: var(--shadow-soft);
+        backdrop-filter: blur(18px);
+      }
+
+      .cta-content {
+        display: grid;
+        gap: 16px;
+        text-align: center;
+      }
+
+      .cta-title {
+        margin: 0;
+        font-size: clamp(1.9rem, 4vw, 2.5rem);
+        font-weight: 800;
+        letter-spacing: -0.03em;
+      }
+
+      .cta-text {
+        margin: 0;
+        color: var(--text-secondary);
+        line-height: 1.7;
+      }
+
+      .cta-buttons {
+        display: grid;
+        gap: 14px;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 15px 26px;
+        border-radius: var(--radius-pill);
+        border: none;
+        cursor: pointer;
+        font-weight: 700;
+        font-size: 1rem;
+        text-decoration: none;
+        transition: transform 160ms ease, box-shadow 160ms ease;
+      }
+
+      .button--primary {
+        background: linear-gradient(130deg, #5960f1, #3a7bff);
+        color: #ffffff;
+        box-shadow: 0 18px 40px rgba(72, 97, 255, 0.4);
+      }
+
+      .button--primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 24px 54px rgba(72, 97, 255, 0.45);
+      }
+
+      .button--secondary {
+        background: rgba(255, 255, 255, 0.12);
+        color: var(--text-primary);
+      }
+
+      .button--secondary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 18px 40px rgba(20, 24, 45, 0.5);
+      }
+
+      footer {
+        margin-top: auto;
+        padding-bottom: 32px;
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        text-align: center;
+        z-index: 1;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      @media (min-width: 720px) {
+        .plan-card {
+          gap: 26px;
+        }
+
+        .plans-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .cta-content {
+          text-align: left;
+        }
+
+        .cta-section {
+          grid-template-columns: 1.2fr 1fr;
+          align-items: center;
+        }
+      }
+
+      @media (max-width: 640px) {
+        body {
+          padding-top: 48px;
+        }
+
+        .plan-card__header {
+          flex-direction: row;
+        }
+
+        .plan-title {
+          font-size: 1.45rem;
+        }
+
+        .exchange-card {
+          flex-wrap: wrap;
+          align-items: flex-start;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="background-grid" aria-hidden="true"></div>
+    <div class="noise-overlay" aria-hidden="true"></div>
+
+    <header>
+      <div class="chip-row">
+        <span class="chip"><i class="ti ti-bolt"></i>Entrega inmediata garantizada</span>
+        <span class="chip chip--outline"><i class="ti ti-shield-check"></i>Pagos verificados y seguros</span>
+        <span class="chip chip--outline"><i class="ti ti-messages"></i>Soporte dedicado en español</span>
+      </div>
+      <h1>Planes de Robux al mejor precio en Dedos.xyz</h1>
+      <p>
+        Elige el método que mejor se adapte a tu cuenta de Roblox. Nuestros planes incluyen
+        acompañamiento 1:1, seguimiento transparente y el tipo de cambio más competitivo para que
+        recibas tus Robux sin complicaciones.
+      </p>
+    </header>
+
+    <main>
+      <section class="plans-grid" aria-label="Planes disponibles">
+        <article class="plan-card plan-card--recommended">
+          <div class="plan-card__header">
+            <span class="plan-icon ti ti-users-group"></span>
+            <div>
+              <span class="plan-tag plan-tag--recommended">Recomendado · Popular</span>
+              <h2 class="plan-title">Compra por grupo</h2>
+            </div>
+          </div>
+          <p class="plan-description">
+            La opción favorita de la comunidad. Realizamos la transferencia directa a través de
+            nuestro grupo oficial y recibes tus Robux en cuestión de minutos.
+          </p>
+          <div class="feature-pills">
+            <span class="feature-pill feature-pill--success">Entrega instantánea</span>
+            <span class="feature-pill">Sin comisiones ocultas</span>
+            <span class="feature-pill">Pago 100% seguro</span>
+          </div>
+          <div class="price-box" data-price="125" data-plan="grupo">
+            <div class="price-header">
+              <span>1000 Robux</span>
+              <strong>125 MXN</strong>
+              <span>Tarifa preferencial de Dedos.xyz</span>
+            </div>
+            <div class="exchange-card">
+              <span class="exchange-icon ti ti-currency-dollar"></span>
+              <div>
+                <span class="usd-amount">Cargando precio en USD…</span>
+                <span class="exchange-rate">Tipo de cambio: <span class="usd-rate" data-rate-target>—</span> MXN → USD</span>
+              </div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div>
+            <h3 class="plan-title" style="font-size: 1.1rem; margin-bottom: 12px">Requisitos</h3>
+            <ul class="requirements">
+              <li><i class="ti ti-check"></i>Tener mínimo <span class="highlight">14 días</span> de antigüedad en el grupo.</li>
+              <li><i class="ti ti-check"></i>Unirte al <a class="inline-link" href="https://www.roblox.com/groups/" target="_blank" rel="noreferrer">grupo oficial de Dedos.xyz</a>.</li>
+              <li><i class="ti ti-check"></i>Confirmar tu usuario de Roblox durante la compra.</li>
+            </ul>
+          </div>
+          <div class="plan-meta">
+            <a class="pill-link" href="https://www.roblox.com/groups/" target="_blank" rel="noreferrer">
+              <i class="ti ti-external-link"></i>Ir al grupo de Roblox
+            </a>
+            <span class="note">Entrega inmediata tras confirmar tu pago.</span>
+          </div>
+        </article>
+
+        <article class="plan-card">
+          <div class="plan-card__header">
+            <span class="plan-icon ti ti-gift"></span>
+            <div>
+              <span class="plan-tag plan-tag--warning">Alternativa recomendada</span>
+              <h2 class="plan-title">Regalo por juego</h2>
+            </div>
+          </div>
+          <p class="plan-description">
+            Aprovecha los regalos dentro de tu juego favorito. Buscamos el gamepass o artículo que
+            elijas y lo compramos desde nuestra cuenta oficial sin esperas adicionales.
+          </p>
+          <div class="feature-pills">
+            <span class="feature-pill feature-pill--success">Entrega en minutos</span>
+            <span class="feature-pill">Funciona en juegos populares</span>
+            <span class="feature-pill">Ideal para regalar gamepasses</span>
+          </div>
+          <div class="price-box" data-price="126" data-plan="regalo">
+            <div class="price-header">
+              <span>1000 Robux</span>
+              <strong>126 MXN</strong>
+              <span>Incluye gestión del artículo</span>
+            </div>
+            <div class="exchange-card">
+              <span class="exchange-icon ti ti-currency-dollar"></span>
+              <div>
+                <span class="usd-amount">Cargando precio en USD…</span>
+                <span class="exchange-rate">Tipo de cambio: <span class="usd-rate" data-rate-target>—</span> MXN → USD</span>
+              </div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div>
+            <h3 class="plan-title" style="font-size: 1.1rem; margin-bottom: 12px">Requisitos</h3>
+            <ul class="requirements">
+              <li><i class="ti ti-check"></i>Contar con un juego donde se puedan regalar artículos o pases.</li>
+              <li><i class="ti ti-check"></i>Seleccionar el gamepass o ítem que quieres recibir.</li>
+              <li><i class="ti ti-check"></i>No es necesario esperar: se entrega al completar el pago.</li>
+            </ul>
+          </div>
+          <div class="plan-meta">
+            <span class="note">Un asesor te ayudará a elegir el artículo correcto si lo necesitas.</span>
+          </div>
+        </article>
+
+        <article class="plan-card">
+          <div class="plan-card__header">
+            <span class="plan-icon ti ti-cash"></span>
+            <div>
+              <span class="plan-tag plan-tag--danger">Menos recomendada</span>
+              <h2 class="plan-title">Gamepass personal</h2>
+            </div>
+          </div>
+          <p class="plan-description">
+            Usa tu propio gamepass para recibir el pago. Es una alternativa válida para cuentas
+            nuevas, pero Roblox retiene los fondos durante varios días antes de liberarlos.
+          </p>
+          <div class="feature-pills">
+            <span class="feature-pill feature-pill--warning">Pago diferido</span>
+            <span class="feature-pill feature-pill--danger">Mayor comisión</span>
+            <span class="feature-pill">Disponibilidad limitada</span>
+          </div>
+          <div class="price-box" data-price="136.99" data-plan="gamepass">
+            <div class="price-header">
+              <span>1000 Robux</span>
+              <strong>136.99 MXN</strong>
+              <span>Incluye cargos por plataforma</span>
+            </div>
+            <div class="exchange-card">
+              <span class="exchange-icon ti ti-currency-dollar"></span>
+              <div>
+                <span class="usd-amount">Cargando precio en USD…</span>
+                <span class="exchange-rate">Tipo de cambio: <span class="usd-rate" data-rate-target>—</span> MXN → USD</span>
+              </div>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div>
+            <h3 class="plan-title" style="font-size: 1.1rem; margin-bottom: 12px">Requisitos</h3>
+            <ul class="requirements">
+              <li><i class="ti ti-check"></i>Contar con gamepasses activos de <span class="highlight">500, 100 y 29 Robux</span>.</li>
+              <li><i class="ti ti-check"></i>Mantener los precios sin ajustes regionales.</li>
+              <li><i class="ti ti-check"></i>Considerar que Roblox libera los Robux de <span class="highlight">5 a 10 días</span> después.</li>
+            </ul>
+          </div>
+          <div class="plan-meta">
+            <span class="note">La entrega puede tardar algunas horas después del pago y la liberación depende de Roblox.</span>
+          </div>
+        </article>
+      </section>
+
+      <section class="rate-banner" id="rate-banner" hidden>
+        <span class="rate-icon ti ti-activity-heartbeat"></span>
+        <div>
+          <span class="rate-label">Tipo de cambio en vivo</span>
+          <div class="rate-value"><span data-rate-target>—</span> MXN → USD</div>
+          <div class="rate-updated" id="rate-updated">Actualizando…</div>
+        </div>
+      </section>
+
+      <section class="cta-section" aria-label="Pasos para comprar">
+        <div class="cta-content">
+          <h2 class="cta-title">¿Listo para tu próxima recarga?</h2>
+          <p class="cta-text">
+            Únete a nuestro Discord oficial, abre un ticket y un asesor te guiará durante todo el
+            proceso. Si presentas inconvenientes con Discord, revisa la guía rápida que preparamos
+            para ti.
+          </p>
+        </div>
+        <div class="cta-buttons">
+          <a
+            class="button button--primary"
+            href="https://discord.gg/dedos"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <i class="ti ti-brand-discord"></i>Entrar al Discord y abrir ticket
+          </a>
+          <a
+            class="button button--secondary"
+            href="https://dedos.xyz/soporte-discord"
+            target="_blank"
+            rel="noreferrer"
+          >
+            <i class="ti ti-help"></i>Tengo problemas con Discord
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer>Dedos.xyz • Servicio verificado para compras de Robux en LATAM.</footer>
+
+    <script>
+      const priceBoxes = document.querySelectorAll('[data-price]');
+      const rateBanner = document.getElementById('rate-banner');
+      const rateTargets = document.querySelectorAll('[data-rate-target]');
+      const rateUpdated = document.getElementById('rate-updated');
+
+      const formatUSD = (value) =>
+        new Intl.NumberFormat('es-MX', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(value);
+
+      const formatRate = (value) => value.toFixed(4);
+
+      function updateUpdatedTime() {
+        const now = new Date();
+        return new Intl.DateTimeFormat('es-MX', {
+          hour: '2-digit',
+          minute: '2-digit',
+        }).format(now);
+      }
+
+      async function updateExchangeRates() {
+        const endpoint = 'https://open.er-api.com/v6/latest/MXN';
+
+        try {
+          const response = await fetch(endpoint);
+          if (!response.ok) {
+            throw new Error('No se pudo obtener el tipo de cambio.');
+          }
+
+          const data = await response.json();
+          const usdRate = data?.rates?.USD;
+
+          if (!usdRate) {
+            throw new Error('Respuesta de API inválida.');
+          }
+
+          rateBanner.hidden = false;
+          rateTargets.forEach((element) => {
+            element.textContent = formatRate(usdRate);
+          });
+
+          if (rateUpdated) {
+            rateUpdated.textContent = `Actualizado a las ${updateUpdatedTime()} hrs`;
+          }
+
+          priceBoxes.forEach((box) => {
+            const price = Number.parseFloat(box.dataset.price ?? '0');
+            const usdValue = price * usdRate;
+            const usdLabel = box.querySelector('.usd-amount');
+
+            if (usdLabel) {
+              usdLabel.textContent = formatUSD(usdValue);
+            }
+          });
+        } catch (error) {
+          priceBoxes.forEach((box) => {
+            const usdLabel = box.querySelector('.usd-amount');
+            if (usdLabel) {
+              usdLabel.textContent = 'Consulta el tipo de cambio con soporte';
+            }
+          });
+          if (rateUpdated) {
+            rateUpdated.textContent = 'No se pudo actualizar el tipo de cambio.';
+          }
+          console.error(error);
+        }
+      }
+
+      updateExchangeRates();
+    </script>
+  </body>
+</html>
