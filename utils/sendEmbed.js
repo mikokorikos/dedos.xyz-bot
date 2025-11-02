@@ -12,35 +12,40 @@ export async function sendEmbed(
   builderArgs = undefined,
   sendOptions = {}
 ) {
-  const { method, spreadArgs = false, ...restOptions } = sendOptions;
   const argsArray =
-    builderArgs === undefined
+    typeof builderArgs === "undefined"
       ? []
-      : Array.isArray(builderArgs) && spreadArgs
+      : Array.isArray(builderArgs)
       ? builderArgs
       : [builderArgs];
 
   const { embed } = await builderFn(...argsArray);
   const gif = new AttachmentBuilder(GIF_PATH, { name: "dedosgift.gif" });
-  const additionalFiles = restOptions.files ?? [];
+
+  const { method, files: extraFiles = [], ...restOptions } = sendOptions ?? {};
 
   const options = {
     ...restOptions,
     embeds: [embed],
-    files: [...additionalFiles, gif],
+    files: [...extraFiles, gif],
   };
 
-  const resolvedMethod =
-    method ??
-    (typeof target.send === "function"
-      ? "send"
-      : typeof target.reply === "function"
-      ? "reply"
-      : undefined);
-
-  if (!resolvedMethod || typeof target[resolvedMethod] !== "function") {
-    throw new Error("sendEmbed: target does not support sending messages");
+  if (method) {
+    if (typeof target[method] !== "function") {
+      throw new Error(
+        `sendEmbed: target does not support the requested method "${method}"`
+      );
+    }
+    return target[method](options);
   }
 
-  return target[resolvedMethod](options);
+  if (typeof target.send === "function") {
+    return target.send(options);
+  }
+
+  if (typeof target.reply === "function") {
+    return target.reply(options);
+  }
+
+  throw new Error("sendEmbed: target does not support sending messages");
 }
