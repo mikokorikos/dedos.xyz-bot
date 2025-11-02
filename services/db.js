@@ -78,9 +78,11 @@ export async function initDB() {
       role_required VARCHAR(50) NULL,        -- ID de rol requerido o NULL
       allowed_users TEXT NULL,               -- JSON de IDs de usuarios permitidos
       min_robux INT DEFAULT 0,               -- mínimo de Robux para aplicar
-      per_user_limit ENUM('once','multi') DEFAULT 'once',
-      -- 'once'  => sólo primera compra
-      -- 'multi' => se puede reutilizar
+      per_user_limit ENUM('once','multi','custom') DEFAULT 'once',
+      -- 'once'   => sólo primera compra
+      -- 'multi'  => se puede reutilizar
+      -- 'custom' => máximo definido por usuario de Discord
+      per_user_limit_custom INT DEFAULT NULL,
 
       discount_type ENUM('percent','fixed') NOT NULL,
       -- percent => discount_value = porcentaje
@@ -91,6 +93,30 @@ export async function initDB() {
       active BOOLEAN DEFAULT TRUE
     );
   `);
+
+  // Asegurar compatibilidad con instalaciones anteriores (nuevas columnas)
+  const [perUserLimitColumn] = await db.query(
+    "SHOW COLUMNS FROM coupons LIKE 'per_user_limit'"
+  );
+  if (
+    Array.isArray(perUserLimitColumn) &&
+    perUserLimitColumn[0] &&
+    typeof perUserLimitColumn[0].Type === "string" &&
+    !perUserLimitColumn[0].Type.includes("custom")
+  ) {
+    await db.query(
+      "ALTER TABLE coupons MODIFY COLUMN per_user_limit ENUM('once','multi','custom') DEFAULT 'once'"
+    );
+  }
+
+  const [customLimitColumn] = await db.query(
+    "SHOW COLUMNS FROM coupons LIKE 'per_user_limit_custom'"
+  );
+  if (!Array.isArray(customLimitColumn) || customLimitColumn.length === 0) {
+    await db.query(
+      "ALTER TABLE coupons ADD COLUMN per_user_limit_custom INT DEFAULT NULL"
+    );
+  }
 
   // Historial de uso de cupones
   await db.query(`

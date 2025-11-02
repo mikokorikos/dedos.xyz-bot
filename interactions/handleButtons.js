@@ -6,8 +6,16 @@ import {
   TextInputStyle,
   ActionRowBuilder,
 } from "discord.js";
-import { openHelpTicket, handlePurchaseStatusUpdate } from "../services/ticketService.js";
-import { openPurchaseTicket } from "../services/ticketService.js";
+import {
+  openHelpTicket,
+  handlePurchaseStatusUpdate,
+  openPurchaseTicket,
+  usePendingPurchaseConfirmation,
+} from "../services/ticketService.js";
+import {
+  buildPurchaseConfirmationComponents,
+  buildPurchaseConfirmationEmbed,
+} from "../embeds/embeds.js";
 import { isStaff } from "../services/permissions.js";
 
 /**
@@ -52,6 +60,124 @@ export async function handleButtonInteraction(client, interaction) {
     modal.addComponents(row1, row2, row3);
 
     await interaction.showModal(modal);
+    return;
+  }
+
+  // Confirmar y abrir ticket de compra tras revisar precios
+  if (id.startsWith("purchase_confirm:")) {
+    const token = id.split(":")[1];
+    const result = usePendingPurchaseConfirmation(token, interaction.user.id);
+
+    if (result.status === "not_found") {
+      await interaction.reply({
+        content:
+          "❌ Esta confirmación ya no existe. Vuelve a llenar el formulario de compra.",
+        ephemeral: true,
+      });
+      return;
+    }
+
+    if (result.status === "unauthorized") {
+      await interaction.reply({
+        content:
+          "⚠️ Solo la persona que generó la confirmación puede usarla.",
+        ephemeral: true,
+      });
+      return;
+    }
+
+    if (result.status === "expired") {
+      const expiredSummary = result.entry?.summary;
+      const expiredEmbed = expiredSummary
+        ? buildPurchaseConfirmationEmbed({
+            ...expiredSummary,
+            status: "expired",
+          })
+        : buildPurchaseConfirmationEmbed({
+            robloxUsername: "—",
+            robuxAmount: 0,
+            priceBeforeMxn: 0,
+            discountMxn: 0,
+            finalPriceMxn: 0,
+            couponCode: null,
+            couponValid: null,
+            couponMessage:
+              "La confirmación expiró. Genera una nueva desde el panel de compra.",
+            status: "expired",
+          });
+      await interaction.update({
+        embeds: [expiredEmbed],
+        components: buildPurchaseConfirmationComponents({ state: "disabled" }),
+      });
+      return;
+    }
+
+    const { data, summary, fraudReported } = result.entry;
+
+    try {
+      const ticketResult = await openPurchaseTicket(interaction, data, {
+        skipReply: true,
+        skipFraudAlert: fraudReported,
+      });
+
+      if (!ticketResult.success) {
+        const alreadyOpenEmbed = buildPurchaseConfirmationEmbed({
+          ...summary,
+          status: "error",
+          errorMessage:
+            "Ya tienes un ticket abierto. Ciérralo antes de generar uno nuevo.",
+        });
+
+        await interaction.update({
+          embeds: [alreadyOpenEmbed],
+          components: buildPurchaseConfirmationComponents({ state: "disabled" }),
+        });
+
+        await interaction.followUp({
+          content:
+            "⚠️ Ya cuentas con un ticket activo. Utiliza ese canal o ciérralo para abrir otro.",
+          ephemeral: true,
+        });
+        return;
+      }
+
+      const successEmbed = buildPurchaseConfirmationEmbed({
+        ...summary,
+        status: "confirmed",
+        ticketId: ticketResult.ticketId,
+      });
+
+      await interaction.update({
+        embeds: [successEmbed],
+        components: buildPurchaseConfirmationComponents({ state: "disabled" }),
+      });
+
+      await interaction.followUp({
+        content: `✅ Ticket #${ticketResult.ticketId} abierto en ${ticketResult.channel}`,
+        ephemeral: true,
+      });
+    } catch (error) {
+      console.error("Error al crear ticket desde confirmación:", error);
+      const errorEmbed = buildPurchaseConfirmationEmbed({
+        ...summary,
+        status: "error",
+        errorMessage:
+          "Ocurrió un error al abrir tu ticket. Por favor inténtalo de nuevo.",
+      });
+
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.update({
+          embeds: [errorEmbed],
+          components: buildPurchaseConfirmationComponents({ state: "disabled" }),
+        });
+      }
+
+      await interaction.followUp({
+        content:
+          "❌ Ocurrió un error inesperado al abrir tu ticket. Contacta al staff.",
+        ephemeral: true,
+      });
+    }
     return;
   }
 

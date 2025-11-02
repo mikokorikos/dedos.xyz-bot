@@ -1,5 +1,6 @@
 // services/ticketService.js
 // Crear tickets, actualizar estados, cerrar y transcript
+import { randomUUID } from "node:crypto";
 import fs from "fs/promises";
 import path from "path";
 import * as transcript from "discord-html-transcripts";
@@ -37,6 +38,8 @@ import {
   buildFraudAlertEmbed,
   buildTicketClosedEmbed,
   buildDeliveryReceiptEmbed,
+  buildPurchaseConfirmationEmbed,
+  buildPurchaseConfirmationComponents,
 } from "../embeds/embeds.js";
 
 /**
@@ -75,18 +78,126 @@ function buildHelpButtonsRow() {
   );
 }
 
+// Tiempo máximo para reutilizar una confirmación (5 minutos)
+const PURCHASE_CONFIRMATION_TTL_MS = 5 * 60 * 1000;
+
+// Memoria temporal para confirmaciones pendientes { token -> data }
+const pendingPurchaseConfirmations = new Map();
+
 /**
- * Crea un canal privado tipo "compra" (pedido de Robux)
- * Recibe data del modal de compra.
- * Hace pricing, valida cupón, abre canal y loguea todo.
+ * Normaliza el cupón a MAYÚSCULAS y sin espacios
  */
-export async function openPurchaseTicket(interaction, data) {
-  const guild = interaction.guild;
+function normalizeCouponCode(rawCode) {
+  const cleaned = String(rawCode || "").trim().toUpperCase();
+  return cleaned.length > 0 ? cleaned : null;
+}
+
+/**
+ * Elimina confirmaciones expiradas para evitar fugas de memoria
+ */
+function cleanupExpiredConfirmations() {
+  const now = Date.now();
+  for (const [token, entry] of pendingPurchaseConfirmations.entries()) {
+    if (now - entry.createdAt > PURCHASE_CONFIRMATION_TTL_MS) {
+      pendingPurchaseConfirmations.delete(token);
+    }
+  }
+}
+
+/**
+ * Envía alerta de posible abuso si el cupón falló por restricción de primera compra
+ */
+async function maybeSendFraudAlert(interaction, couponResult, context) {
+  if (!couponResult || !couponResult.fraudFlag || !couponResult.fraudInfo) {
+    return false;
+  }
+
+  const fraudEmbed = buildFraudAlertEmbed({
+    discordUserTag: context.userTag,
+    discordUserId: context.userId,
+    robloxUsername: couponResult.fraudInfo.robloxUsername,
+    couponCode: couponResult.fraudInfo.couponCode,
+    priorTicketId: couponResult.fraudInfo.priorTicketId,
+    priorBuyerDiscordId: couponResult.fraudInfo.priorBuyerDiscordId,
+    priorCreatedAt: couponResult.fraudInfo.priorCreatedAt,
+  });
+
+  const fraudChan = interaction.client.channels.cache.get(
+    config.STAFF_LOG_CHANNEL_ID
+  );
+  if (fraudChan) {
+    await fraudChan.send({ embeds: [fraudEmbed] });
+  }
+  return true;
+}
+
+/**
+ * Calcula precios finales y aplica la validación de cupones
+ */
+async function computePurchasePricing(interaction, data) {
+  const basePrice = getPriceForRobux(data.robuxAmount);
+  const priceBeforeMxn = basePrice.mxn;
+
+  const couponResult = await validateCoupon({
+    couponCode: data.couponCode,
+    robuxAmount: data.robuxAmount,
+    robloxUsername: data.robloxUsername,
+    discordMember: interaction.member,
+    discordUserId: interaction.user.id,
+    priceBeforeMxn,
+  });
+
+  const effectiveCoupon = couponResult.ok ? couponResult.couponUsed : null;
+  const finalPriceMxn = couponResult.ok
+    ? couponResult.finalPriceMxn
+    : priceBeforeMxn;
+  const discountMxn = couponResult.ok ? couponResult.discountMxn : 0;
+
+  return {
+    priceBeforeMxn,
+    couponResult,
+    effectiveCoupon,
+    finalPriceMxn,
+    discountMxn,
+  };
+}
+
+/**
+ * Devuelve y consume la confirmación pendiente asociada a un token
+ */
+export function usePendingPurchaseConfirmation(token, userId) {
+  cleanupExpiredConfirmations();
+
+  if (!token) {
+    return { status: "not_found" };
+  }
+
+  const entry = pendingPurchaseConfirmations.get(token);
+  if (!entry) {
+    return { status: "not_found" };
+  }
+
+  if (Date.now() - entry.createdAt > PURCHASE_CONFIRMATION_TTL_MS) {
+    pendingPurchaseConfirmations.delete(token);
+    return { status: "expired", entry };
+  }
+
+  if (entry.userId !== userId) {
+    return { status: "unauthorized" };
+  }
+
+  pendingPurchaseConfirmations.delete(token);
+  return { status: "ok", entry };
+}
+
+/**
+ * Genera resumen de compra y muestra embed de confirmación antes de crear ticket
+ */
+export async function previewPurchaseTicket(interaction, rawData) {
   const user = interaction.user;
-  const member = interaction.member;
   const db = getDB();
 
-  // Ver si ya tiene un ticket abierto
+  // Evitar duplicar tickets
   const [existing] = await db.execute(
     `SELECT * FROM tickets
      WHERE user_id = ?
@@ -103,58 +214,122 @@ export async function openPurchaseTicket(interaction, data) {
     return;
   }
 
+  const normalizedData = {
+    robloxUsername: String(rawData.robloxUsername || "").trim(),
+    robuxAmount: Number(rawData.robuxAmount),
+    couponCode: normalizeCouponCode(rawData.couponCode),
+  };
+
+  const pricing = await computePurchasePricing(interaction, normalizedData);
+
+  let couponMessage = "No ingresaste ningún cupón.";
+  let couponValid = null;
+  if (normalizedData.couponCode) {
+    couponValid = Boolean(pricing.effectiveCoupon);
+    couponMessage = couponValid
+      ? `Se aplicará el descuento ${pricing.couponResult.meta?.discount_display || "configurado"}.`
+      : pricing.couponResult.message || "El cupón no se aplicará.";
+  }
+
+  const summary = {
+    robloxUsername: normalizedData.robloxUsername,
+    robuxAmount: normalizedData.robuxAmount,
+    priceBeforeMxn: pricing.priceBeforeMxn,
+    discountMxn: pricing.discountMxn,
+    finalPriceMxn: pricing.finalPriceMxn,
+    couponCode: normalizedData.couponCode,
+    couponValid,
+    couponMessage,
+  };
+
+  const embed = buildPurchaseConfirmationEmbed({
+    ...summary,
+    status: "preview",
+  });
+
+  const token = randomUUID();
+  cleanupExpiredConfirmations();
+
+  const fraudReported = await maybeSendFraudAlert(interaction, pricing.couponResult, {
+    userTag: user.tag,
+    userId: user.id,
+  });
+
+  pendingPurchaseConfirmations.set(token, {
+    createdAt: Date.now(),
+    userId: user.id,
+    data: normalizedData,
+    summary,
+    fraudReported,
+  });
+
+  await interaction.reply({
+    embeds: [embed],
+    components: buildPurchaseConfirmationComponents({
+      token,
+      state: "pending",
+    }),
+    files: [GIF_PATH],
+    ephemeral: true,
+  });
+}
+
+/**
+ * Crea un canal privado tipo "compra" (pedido de Robux)
+ * Recibe data del modal de compra.
+ * Hace pricing, valida cupón, abre canal y loguea todo.
+ */
+export async function openPurchaseTicket(interaction, data, options = {}) {
+  const { skipReply = false, skipFraudAlert = false } = options;
+  const guild = interaction.guild;
+  const user = interaction.user;
+  const db = getDB();
+
+  // Ver si ya tiene un ticket abierto
+  const [existing] = await db.execute(
+    `SELECT * FROM tickets
+     WHERE user_id = ?
+       AND closed_at IS NULL
+     LIMIT 1`,
+    [user.id]
+  );
+  if (existing.length > 0) {
+    if (!skipReply) {
+      await interaction.reply({
+        content:
+          "⚠️ Ya tienes un ticket abierto. Por favor ciérralo antes de abrir otro.",
+        ephemeral: true,
+      });
+    }
+    return { success: false, reason: "has-open-ticket" };
+  }
+
   // Generar ID nuevo
   const [countRows] = await db.execute(
     "SELECT COUNT(*) as total FROM tickets"
   );
   const ticketId = String(countRows[0].total + 1).padStart(3, "0");
 
-  // Calcular precio base
-  const basePrice = getPriceForRobux(data.robuxAmount);
-  const priceBeforeMxn = basePrice.mxn;
+  const normalizedData = {
+    robloxUsername: String(data.robloxUsername || "").trim(),
+    robuxAmount: Number(data.robuxAmount),
+    couponCode: normalizeCouponCode(data.couponCode),
+  };
 
-  // Validar cupón (si existe)
-  const couponResult = await validateCoupon({
-    couponCode: data.couponCode,
-    robuxAmount: data.robuxAmount,
-    robloxUsername: data.robloxUsername,
-    discordMember: member,
-    discordUserId: user.id,
-    priceBeforeMxn,
-  });
+  const pricing = await computePurchasePricing(interaction, normalizedData);
 
-  // Anti-fraude ALERTA si intentó usar cupón de primera compra y no aplica
-  if (!couponResult.ok && couponResult.fraudFlag && couponResult.fraudInfo) {
-    const fraudEmbed = buildFraudAlertEmbed({
-      discordUserTag: user.tag,
-      discordUserId: user.id,
-      robloxUsername: couponResult.fraudInfo.robloxUsername,
-      couponCode: couponResult.fraudInfo.couponCode,
-      priorTicketId: couponResult.fraudInfo.priorTicketId,
-      priorBuyerDiscordId: couponResult.fraudInfo.priorBuyerDiscordId,
-      priorCreatedAt: couponResult.fraudInfo.priorCreatedAt,
+  if (!skipFraudAlert) {
+    await maybeSendFraudAlert(interaction, pricing.couponResult, {
+      userTag: user.tag,
+      userId: user.id,
     });
-
-    const fraudChan = interaction.client.channels.cache.get(
-      config.STAFF_LOG_CHANNEL_ID
-    );
-    if (fraudChan) {
-      await fraudChan.send({
-        embeds: [fraudEmbed],
-      });
-    }
   }
 
-  // Si cupón no válido => seguimos SIN cupón
-  const effectiveCoupon = couponResult.ok
-    ? couponResult.couponUsed
-    : null;
-  const finalPriceMxn = couponResult.ok
-    ? couponResult.finalPriceMxn
-    : priceBeforeMxn;
-  const discountMxn = couponResult.ok
-    ? couponResult.discountMxn
-    : 0;
+  const effectiveCoupon = pricing.effectiveCoupon;
+  const finalPriceMxn = pricing.finalPriceMxn;
+  const discountMxn = pricing.discountMxn;
+  const priceBeforeMxn = pricing.priceBeforeMxn;
+  const couponResult = pricing.couponResult;
 
   // Crear canal privado
   const channelName = `ticket-${ticketId}-${user.username}`;
@@ -210,8 +385,8 @@ export async function openPurchaseTicket(interaction, data) {
   await createPurchaseRecord({
     ticketId,
     buyerDiscordId: user.id,
-    robloxUsername: data.robloxUsername,
-    robuxAmount: data.robuxAmount,
+    robloxUsername: normalizedData.robloxUsername,
+    robuxAmount: normalizedData.robuxAmount,
     priceBeforeMxn,
     couponCode: effectiveCoupon ? effectiveCoupon.code : null,
     discountMxn,
@@ -224,8 +399,8 @@ export async function openPurchaseTicket(interaction, data) {
   const purchaseEmbed = buildPurchaseTicketEmbed({
     ticketId,
     userTag: user.tag,
-    robloxUsername: data.robloxUsername,
-    robuxAmount: data.robuxAmount,
+    robloxUsername: normalizedData.robloxUsername,
+    robuxAmount: normalizedData.robuxAmount,
     priceNormalDisplay,
     priceFinalDisplay,
     couponCode: effectiveCoupon ? effectiveCoupon.code : null,
@@ -248,20 +423,22 @@ export async function openPurchaseTicket(interaction, data) {
   await updatePurchaseStatusMessageId(ticketId, sentMsg.id);
 
   // Mandar respuesta ephemeral al que pidió
-  await interaction.reply({
-    content: `✅ Ticket #${ticketId} abierto en ${channel}`,
-    ephemeral: true,
-  });
+  if (!skipReply) {
+    await interaction.reply({
+      content: `✅ Ticket #${ticketId} abierto en ${channel}`,
+      ephemeral: true,
+    });
+  }
 
   console.log(
-    `🎫 ${user.tag} abrió ticket de compra #${ticketId} (${data.robuxAmount} Robux)`
+    `🎫 ${user.tag} abrió ticket de compra #${ticketId} (${normalizedData.robuxAmount} Robux)`
   );
 
   // Si el cupón fue válido => registrar uso y mandar logs público+staff
   if (effectiveCoupon) {
     const { remainingUsesText } = await registerCouponUse({
       coupon: effectiveCoupon,
-      robloxUsername: data.robloxUsername,
+      robloxUsername: normalizedData.robloxUsername,
       discordUserId: user.id,
       ticketId,
     });
@@ -269,8 +446,8 @@ export async function openPurchaseTicket(interaction, data) {
     // Build embed público
     const pubEmbed = buildCouponPublicEmbedShort({
       discordUserTag: user.tag,
-      roblox_username: data.robloxUsername,
-      robux_amount: data.robuxAmount,
+      roblox_username: normalizedData.robloxUsername,
+      robux_amount: normalizedData.robuxAmount,
       coupon_code: effectiveCoupon.code,
       price_before_mxn: priceBeforeMxn,
       price_after_mxn: finalPriceMxn,
@@ -280,9 +457,9 @@ export async function openPurchaseTicket(interaction, data) {
 
     const staffEmbed = buildCouponLogEmbedFull({
       discordUserTag: user.tag,
-      roblox_username: data.robloxUsername,
+      roblox_username: normalizedData.robloxUsername,
       ticket_id: ticketId,
-      robux_amount: data.robuxAmount,
+      robux_amount: normalizedData.robuxAmount,
       price_before_mxn: priceBeforeMxn,
       price_after_mxn: finalPriceMxn,
       discount_mxn: discountMxn,
@@ -312,6 +489,16 @@ export async function openPurchaseTicket(interaction, data) {
       });
     }
   }
+
+  return {
+    success: true,
+    ticketId,
+    channel,
+    couponResult,
+    finalPriceMxn,
+    priceBeforeMxn,
+    discountMxn,
+  };
 }
 
 /**
