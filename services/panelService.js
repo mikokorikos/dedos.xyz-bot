@@ -7,14 +7,13 @@ import {
 } from "discord.js";
 import { config } from "../constants/config.js";
 import { buildRobuxPanelEmbed, buildHelpPanelEmbed } from "../embeds/embeds.js";
-import { GIF_PATH } from "../constants/ui.js";
+import { sendEmbed } from "../utils/sendEmbed.js";
 
 /**
  * Panel de compra Robux.
  * Sólo debe ir en ROBLOX_PANEL_CHANNEL_ID.
  */
 export async function publishRobuxPanel(channel) {
-  const embed = await buildRobuxPanelEmbed();
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId("abrir_ticket_compra")
@@ -32,11 +31,7 @@ export async function publishRobuxPanel(channel) {
       .setURL("https://dedos.xyz/roblox")
   );
 
-  await channel.send({
-    embeds: [embed],
-    files: [GIF_PATH],
-    components: [row],
-  });
+  await sendEmbed(channel, buildRobuxPanelEmbed, undefined, { components: [row] });
 }
 
 /**
@@ -44,7 +39,6 @@ export async function publishRobuxPanel(channel) {
  * Sólo debe ir en AYUDA_PANEL_CHANNEL_ID.
  */
 export async function publishAyudaPanel(channel) {
-  const embed = buildHelpPanelEmbed();
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId("abrir_ticket_ayuda")
@@ -62,9 +56,5 @@ export async function publishAyudaPanel(channel) {
       .setURL("https://dedos.xyz/roblox")
   );
 
-  await channel.send({
-    embeds: [embed],
-    files: [GIF_PATH],
-    components: [row],
-  });
+  await sendEmbed(channel, buildHelpPanelEmbed, undefined, { components: [row] });
 }

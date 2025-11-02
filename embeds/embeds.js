@@ -1,13 +1,15 @@
 // embeds/embeds.js
 // Todos los embeds bonitos en un solo lugar
 import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   EmbedBuilder,
 } from "discord.js";
 import {
   COLOR,
   baseAuthor,
   baseFooter,
-  GIF_PATH,
   ROBLOX_GROUP_URL,
 } from "../constants/ui.js";
 import { config } from "../constants/config.js";
@@ -46,7 +48,7 @@ export async function buildRobuxPanelEmbed() {
     2
   )} MXN (~$${p1000.usd.toFixed(2)} USD)`;
 
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(COLOR)
     .setAuthor(baseAuthor())
     .setFooter(baseFooter())
@@ -74,13 +76,15 @@ export async function buildRobuxPanelEmbed() {
         inline: true,
       }
     );
+
+  return { embed };
 }
 
 /**
  * Panel de ayuda
  */
 export function buildHelpPanelEmbed() {
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(COLOR)
     .setAuthor(baseAuthor())
     .setFooter(baseFooter())
@@ -98,6 +102,8 @@ export function buildHelpPanelEmbed() {
         "<:verifiedgreen:1431453136265941132> Hacer una alianza\n" +
         "<:verifiedgreen:1431453136265941132> Reportar servidor/personas/errores",
     });
+
+  return { embed };
 }
 
 /**
@@ -130,7 +136,7 @@ export function buildPurchaseTicketEmbed({
       `💵 Total: ${priceFinalDisplay}`;
   }
 
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(COLOR)
     .setAuthor(baseAuthor())
     .setFooter(baseFooter())
@@ -162,13 +168,148 @@ export function buildPurchaseTicketEmbed({
         inline: false,
       }
     );
+
+  return { embed };
+}
+
+/**
+ * Embed de confirmación previa a abrir ticket de compra
+ */
+export function buildPurchaseConfirmationEmbed({
+  robloxUsername,
+  robuxAmount,
+  priceBeforeMxn,
+  discountMxn,
+  finalPriceMxn,
+  couponCode,
+  couponValid,
+  couponMessage,
+  status = "preview",
+  ticketId = null,
+  errorMessage = null,
+}) {
+  const colorMap = {
+    preview: COLOR,
+    confirmed: 0x4caf50,
+    expired: 0xffa000,
+    error: 0xff5252,
+  };
+
+  const embed = new EmbedBuilder()
+    .setColor(colorMap[status] || COLOR)
+    .setAuthor(baseAuthor())
+    .setFooter(baseFooter())
+    .setImage("attachment://dedosgift.gif")
+    .setTimestamp(new Date())
+    .setTitle(
+      status === "confirmed"
+        ? "🎉 Ticket abierto correctamente"
+        : status === "expired"
+        ? "⌛ Confirmación expirada"
+        : status === "error"
+        ? "❌ Hubo un problema"
+        : "🛒 Confirma tu compra"
+    )
+    .setDescription(
+      `👤 Roblox: **${robloxUsername}**\n` +
+        `💎 Robux solicitados: **${robuxAmount}** <:robux:1431425797603987569>`
+    )
+    .addFields(
+      {
+        name: "Precio original",
+        value: formatPrice(priceBeforeMxn),
+        inline: true,
+      },
+      {
+        name: "Descuento aplicado",
+        value:
+          Number(discountMxn) > 0
+            ? `-${formatPrice(discountMxn)}`
+            : "Sin descuento",
+        inline: true,
+      },
+      {
+        name: "Precio final",
+        value: formatPrice(finalPriceMxn),
+        inline: true,
+      }
+    );
+
+  if (couponCode) {
+    const statusLine = couponValid
+      ? `✅ Cupón **${couponCode}** aplicado.`
+      : `❌ Cupón **${couponCode}** no válido.`;
+    embed.addFields({
+      name: "Estado del cupón",
+      value: `${statusLine}\n${couponMessage || ""}`.trim(),
+      inline: false,
+    });
+  } else {
+    embed.addFields({
+      name: "Estado del cupón",
+      value: couponMessage || "No ingresaste ningún cupón.",
+      inline: false,
+    });
+  }
+
+  if (status === "preview") {
+    embed.addFields({
+      name: "Siguiente paso",
+      value: "Presiona ✅ para abrir tu ticket y continuar con la compra.",
+      inline: false,
+    });
+  }
+
+  if (status === "confirmed" && ticketId) {
+    embed.addFields({
+      name: "Ticket creado",
+      value: `Se abrió el ticket **#${ticketId}**. ¡Te atenderemos pronto!`,
+      inline: false,
+    });
+  }
+
+  if (status === "expired") {
+    embed.addFields({
+      name: "¿Qué hago ahora?",
+      value: "Vuelve a llenar el formulario para generar una nueva confirmación.",
+      inline: false,
+    });
+  }
+
+  if (status === "error" && errorMessage) {
+    embed.addFields({
+      name: "Detalle",
+      value: errorMessage,
+      inline: false,
+    });
+  }
+
+  return { embed };
+}
+
+/**
+ * Componentes (botón) para confirmar apertura del ticket
+ */
+export function buildPurchaseConfirmationComponents({ token, state = "pending" }) {
+  if (state !== "pending" || !token) {
+    return [];
+  }
+
+  return [
+    new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`purchase_confirm:${token}`)
+        .setLabel("✅ Confirmar y abrir ticket")
+        .setStyle(ButtonStyle.Success)
+    ),
+  ];
 }
 
 /**
  * Embed inicial de ticket de ayuda
  */
 export function buildHelpTicketEmbed({ ticketId, userTag }) {
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(COLOR)
     .setAuthor(baseAuthor())
     .setFooter(baseFooter())
@@ -184,6 +325,8 @@ export function buildHelpTicketEmbed({ ticketId, userTag }) {
       value: "🔒 Cerrar Ticket",
       inline: false,
     });
+
+  return { embed };
 }
 
 /**
@@ -193,7 +336,7 @@ export function buildCouponPublicEmbedShort(data) {
   const beforeStr = formatPrice(data.price_before_mxn);
   const afterStr = formatPrice(data.price_after_mxn);
 
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(COLOR)
     .setAuthor(baseAuthor())
     .setFooter(baseFooter())
@@ -228,6 +371,8 @@ export function buildCouponPublicEmbedShort(data) {
         inline: false,
       }
     );
+
+  return { embed };
 }
 
 /**
@@ -237,7 +382,7 @@ export function buildCouponLogEmbedFull(data) {
   const beforeStr = formatPrice(data.price_before_mxn);
   const afterStr = formatPrice(data.price_after_mxn);
 
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(COLOR)
     .setAuthor(baseAuthor())
     .setFooter(baseFooter())
@@ -278,16 +423,19 @@ export function buildCouponLogEmbedFull(data) {
         inline: true,
       }
     );
+
+  return { embed };
 }
 
 /**
  * Embed para alerta de intento de abuso de cupón primera compra
  */
 export function buildFraudAlertEmbed(f) {
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(0xff0000)
     .setAuthor(baseAuthor())
     .setFooter(baseFooter())
+    .setImage("attachment://dedosgift.gif")
     .setTitle("⚠ Posible abuso de cupón primera compra")
     .setDescription(
       `Usuario Discord: <@${f.discordUserId}> (${f.discordUserTag})\n` +
@@ -305,6 +453,8 @@ export function buildFraudAlertEmbed(f) {
         inline: false,
       }
     );
+
+  return { embed };
 }
 
 /**
@@ -321,7 +471,7 @@ export function buildTicketClosedEmbed({
   const typeEmoji = ticketType === "ayuda" ? "❓" : "💰";
   const typeName = ticketType === "ayuda" ? "Ayuda" : "Compra";
 
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(COLOR)
     .setAuthor(baseAuthor())
     .setFooter(baseFooter())
@@ -350,6 +500,8 @@ export function buildTicketClosedEmbed({
         inline: false,
       }
     );
+
+  return { embed };
 }
 
 /**
@@ -361,7 +513,7 @@ export async function buildWelcomeDMEmbed(guild) {
     2
   )} MXN (~$${p1000.usd.toFixed(2)} USD)`;
 
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(COLOR)
     .setAuthor(baseAuthor())
     .setFooter(baseFooter())
@@ -382,6 +534,8 @@ export async function buildWelcomeDMEmbed(guild) {
         inline: true,
       }
     );
+
+  return { embed };
 }
 
 /**
@@ -393,7 +547,7 @@ export async function buildVerifiedDMEmbed(guild) {
     2
   )} MXN (~$${p1000.usd.toFixed(2)} USD)`;
 
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(COLOR)
     .setAuthor(baseAuthor())
     .setFooter(baseFooter())
@@ -413,6 +567,8 @@ export async function buildVerifiedDMEmbed(guild) {
         inline: true,
       }
     );
+
+  return { embed };
 }
 
 /**
@@ -425,10 +581,11 @@ export function buildDeliveryReceiptEmbed({
   robuxAmount,
   finalPriceMxn,
 }) {
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(COLOR)
     .setAuthor(baseAuthor())
     .setFooter(baseFooter())
+    .setImage("attachment://dedosgift.gif")
     .setTitle("✅ Pedido entregado")
     .setDescription(
       "Gracias por tu compra en dedos.xyz 💜\n" +
@@ -457,6 +614,8 @@ export function buildDeliveryReceiptEmbed({
       }
     )
     .setTimestamp(new Date());
+
+  return { embed };
 }
 
 /**
@@ -487,13 +646,15 @@ export function buildPriceQuoteEmbed(data) {
     desc = "No pude calcular.";
   }
 
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(COLOR)
     .setAuthor(baseAuthor())
     .setFooter(baseFooter())
     .setImage("attachment://dedosgift.gif")
     .setTitle(title)
     .setDescription(desc);
+
+  return { embed };
 }
 
 /**
@@ -504,6 +665,7 @@ export function buildCouponsListEmbed(coupons) {
     .setColor(COLOR)
     .setAuthor(baseAuthor())
     .setFooter(baseFooter())
+    .setImage("attachment://dedosgift.gif")
     .setTitle("🎟 Cupones activos")
     .setDescription(
       "Detalle completo de cada cupón.\n" +
@@ -516,7 +678,7 @@ export function buildCouponsListEmbed(coupons) {
       name: "Nada",
       value: "No hay cupones activos.",
     });
-    return embed;
+    return { embed };
   }
 
   for (const c of coupons.slice(0, 10)) {
@@ -562,6 +724,10 @@ export function buildCouponsListEmbed(coupons) {
     const perUserDesc =
       c.per_user_limit === "multi"
         ? "Reutilizable"
+        : c.per_user_limit === "custom"
+        ? Number(c.per_user_limit_custom || 0) > 0
+          ? `Hasta ${Number(c.per_user_limit_custom)} usos por usuario`
+          : "Límite personalizado"
         : "1 vez / primera compra";
 
     // mínimo robux
@@ -587,14 +753,14 @@ export function buildCouponsListEmbed(coupons) {
     });
   }
 
-  return embed;
+  return { embed };
 }
 
 /**
  * Embed de reglas/verificación
  */
 export function buildRulesEmbed() {
-  return new EmbedBuilder()
+  const embed = new EmbedBuilder()
     .setColor(COLOR)
     .setAuthor(baseAuthor())
     .setFooter(baseFooter())
@@ -614,4 +780,6 @@ export function buildRulesEmbed() {
         value: `Reacciona con ✅ a este mensaje para verificarte y aceptar los <#${config.TOS_CHANNEL_ID}>.`,
       }
     );
+
+  return { embed };
 }

@@ -19,6 +19,22 @@ function parseAllowedUsers(jsonText) {
 }
 
 /**
+ * Cuenta cuántas veces un usuario de Discord ha usado un cupón.
+ */
+async function countCouponUsageByDiscordUser(couponCode, discordUserId) {
+  if (!couponCode || !discordUserId) return 0;
+  const db = getDB();
+  const [rows] = await db.execute(
+    `SELECT COUNT(*) AS total
+     FROM coupon_usage
+     WHERE coupon_code = ?
+       AND discord_user_id = ?`,
+    [couponCode, discordUserId]
+  );
+  return Number(rows[0]?.total || 0);
+}
+
+/**
  * Crea cupón en DB
  * data = {
  *   code, expires_at, max_uses_total, role_required,
@@ -31,8 +47,9 @@ export async function createCoupon(data) {
   await db.execute(
     `INSERT INTO coupons
       (code, expires_at, max_uses_total, role_required, allowed_users,
-       min_robux, per_user_limit, discount_type, discount_value, reason, active)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
+       min_robux, per_user_limit, per_user_limit_custom, discount_type,
+       discount_value, reason, active)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, TRUE)`,
     [
       data.code,
       data.expires_at || null,
@@ -43,6 +60,9 @@ export async function createCoupon(data) {
         : null,
       data.min_robux ?? 0,
       data.per_user_limit || "once",
+      data.per_user_limit === "custom"
+        ? Number(data.per_user_limit_custom || 0)
+        : null,
       data.discount_type,
       data.discount_value,
       data.reason || "",
@@ -219,6 +239,25 @@ export async function validateCoupon({
     };
   }
 
+  // límite personalizado por usuario (Discord)
+  if (coupon.per_user_limit === "custom") {
+    const maxPerUser = Number(coupon.per_user_limit_custom || 0);
+    if (maxPerUser > 0) {
+      const usageCount = await countCouponUsageByDiscordUser(
+        coupon.code,
+        discordUserId
+      );
+      if (usageCount >= maxPerUser) {
+        return {
+          ok: false,
+          message: `Este código solo puede usarse ${maxPerUser} veces por usuario.`,
+          fraudFlag: false,
+          fraudInfo: null,
+        };
+      }
+    }
+  }
+
   // primera compra?
   const firstCheck = await checkFirstPurchaseRestriction(
     coupon,
@@ -279,6 +318,10 @@ export async function validateCoupon({
   const perUserLimitDesc =
     coupon.per_user_limit === "once"
       ? "1 vez por cuenta Roblox"
+      : coupon.per_user_limit === "custom"
+      ? Number(coupon.per_user_limit_custom || 0) > 0
+        ? `Hasta ${Number(coupon.per_user_limit_custom)} usos por usuario`
+        : "Límite personalizado"
       : "Reutilizable";
 
   const publicOrPrivateDesc =
