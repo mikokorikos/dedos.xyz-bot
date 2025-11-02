@@ -115,9 +115,22 @@ export const commandsData = [
             name: "once (1 vez / primera compra)",
             value: "once",
           },
-          { name: "multi (reutilizable)", value: "multi" }
+          { name: "multi (reutilizable)", value: "multi" },
+          {
+            name: "custom (define máximo por usuario)",
+            value: "custom",
+          }
         )
         .setRequired(false)
+    )
+    .addIntegerOption((opt) =>
+      opt
+        .setName("limiteusuario_num")
+        .setDescription(
+          "Máximo de usos por usuario (usa solo si seleccionas 'custom')"
+        )
+        .setRequired(false)
+        .setMinValue(1)
     )
     .addStringOption((opt) =>
       opt

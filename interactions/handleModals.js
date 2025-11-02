@@ -1,6 +1,9 @@
 // interactions/handleModals.js
 // Manejo de modales (formularios emergentes)
-import { openPurchaseTicket, closeTicketWithTranscript } from "../services/ticketService.js";
+import {
+  previewPurchaseTicket,
+  closeTicketWithTranscript,
+} from "../services/ticketService.js";
 
 /**
  * handleModalSubmit(client, interaction)
@@ -30,7 +33,7 @@ export async function handleModalSubmit(client, interaction) {
       return;
     }
 
-    await openPurchaseTicket(interaction, {
+    await previewPurchaseTicket(interaction, {
       robloxUsername,
       robuxAmount,
       couponCode,

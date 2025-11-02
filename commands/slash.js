@@ -172,6 +172,8 @@ export async function handleSlashCommand(client, interaction) {
       interaction.options.getInteger("minrobux", false) ?? 0;
     const limiteusuario =
       interaction.options.getString("limiteusuario", false) || "once";
+    const limiteusuarioNum =
+      interaction.options.getInteger("limiteusuario_num", false) ?? null;
 
     const motivo =
       interaction.options.getString("motivo", false) || "";
@@ -180,6 +182,17 @@ export async function handleSlashCommand(client, interaction) {
       expiraRaw && expiraRaw.toLowerCase() !== "none"
         ? expiraRaw
         : null;
+
+    if (
+      limiteusuario === "custom" &&
+      (!limiteusuarioNum || Number(limiteusuarioNum) <= 0)
+    ) {
+      return interaction.reply({
+        content:
+          "❌ Debes especificar cuántas veces podrá usarlo cada usuario cuando eliges 'custom'.",
+        ephemeral: true,
+      });
+    }
 
     await createCoupon({
       code,
@@ -191,6 +204,9 @@ export async function handleSlashCommand(client, interaction) {
       allowed_users: usuariosArr, // IDs limpios
       min_robux: minrobux,
       per_user_limit: limiteusuario,
+      per_user_limit_custom: limiteusuario === "custom"
+        ? Number(limiteusuarioNum)
+        : null,
       reason: motivo,
     });
 
