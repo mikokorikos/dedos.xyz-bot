@@ -1,7 +1,6 @@
 // commands/prefix.js
 // Manejo de comandos con prefijo ";"
 import { config } from "../constants/config.js";
-import { GIF_PATH } from "../constants/ui.js";
 import { isOwner, isStaff } from "../services/permissions.js";
 import {
   publishRobuxPanel,
@@ -22,6 +21,7 @@ import {
   buildRulesEmbed,
 } from "../embeds/embeds.js";
 import { sendTranscriptById } from "../services/ticketService.js";
+import { sendEmbed } from "../utils/sendEmbed.js";
 
 export async function handlePrefixCommand(client, message) {
   const args = message.content.slice(1).trim().split(/\s+/);
@@ -79,13 +79,16 @@ export async function handlePrefixCommand(client, message) {
       return;
     }
     const p = getPriceForRobux(robux);
-    const embed = buildPriceQuoteEmbed({
-      mode: "robux->precio",
-      robux,
-      mxn: p.mxn,
-      usd: p.usd,
-    });
-    await message.reply({ embeds: [embed], files: [GIF_PATH] });
+    await sendEmbed(
+      message,
+      buildPriceQuoteEmbed,
+      {
+        mode: "robux->precio",
+        robux,
+        mxn: p.mxn,
+        usd: p.usd,
+      }
+    );
     return;
   }
 
@@ -99,13 +102,16 @@ export async function handlePrefixCommand(client, message) {
       return;
     }
     const r = getRobuxFromMxn(mxnVal);
-    const embed = buildPriceQuoteEmbed({
-      mode: "mxn->robux",
-      robux: r.robux,
-      mxn: r.mxn,
-      usd: r.usd,
-    });
-    await message.reply({ embeds: [embed], files: [GIF_PATH] });
+    await sendEmbed(
+      message,
+      buildPriceQuoteEmbed,
+      {
+        mode: "mxn->robux",
+        robux: r.robux,
+        mxn: r.mxn,
+        usd: r.usd,
+      }
+    );
     return;
   }
 
@@ -119,13 +125,16 @@ export async function handlePrefixCommand(client, message) {
       return;
     }
     const r = getRobuxFromUsd(usdVal);
-    const embed = buildPriceQuoteEmbed({
-      mode: "usd->robux",
-      robux: r.robux,
-      mxn: r.mxn,
-      usd: r.usd,
-    });
-    await message.reply({ embeds: [embed], files: [GIF_PATH] });
+    await sendEmbed(
+      message,
+      buildPriceQuoteEmbed,
+      {
+        mode: "usd->robux",
+        robux: r.robux,
+        mxn: r.mxn,
+        usd: r.usd,
+      }
+    );
     return;
   }
 
@@ -136,19 +145,22 @@ export async function handlePrefixCommand(client, message) {
       return;
     }
     const coupons = await listActiveCoupons();
-    const embed = buildCouponsListEmbed(coupons);
 
     try {
-      await message.author.send({ embeds: [embed] });
+      await sendEmbed(message.author, buildCouponsListEmbed, coupons);
       await message.reply(
         "📬 Te mandé los cupones activos por DM (revisa inbox)."
       );
     } catch {
-      await message.reply({
-        embeds: [embed],
-        content:
-          "⚠ No pude mandarte DM, así que lo dejo aquí (borra este mensaje luego).",
-      });
+      await sendEmbed(
+        message,
+        buildCouponsListEmbed,
+        coupons,
+        {
+          content:
+            "⚠ No pude mandarte DM, así que lo dejo aquí (borra este mensaje luego).",
+        }
+      );
     }
     return;
   }
@@ -204,11 +216,7 @@ export async function handlePrefixCommand(client, message) {
 
   // ;reglas
   if (cmd === "reglas") {
-    const reglasEmbed = buildRulesEmbed();
-    const sent = await message.channel.send({
-      embeds: [reglasEmbed],
-      files: [GIF_PATH],
-    });
+    const sent = await sendEmbed(message.channel, buildRulesEmbed);
     // Reacción ✅ para verificación
     await sent.react("✅").catch(console.error);
     return;

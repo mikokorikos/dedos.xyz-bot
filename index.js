@@ -16,7 +16,7 @@ import { handleSlashCommand } from "./commands/slash.js";
 import { handleButtonInteraction } from "./interactions/handleButtons.js";
 import { handleModalSubmit } from "./interactions/handleModals.js";
 import { buildWelcomeDMEmbed, buildVerifiedDMEmbed } from "./embeds/embeds.js";
-import { GIF_PATH } from "./constants/ui.js";
+import { sendEmbed } from "./utils/sendEmbed.js";
 
 const client = new Client({
   intents: [
@@ -123,11 +123,7 @@ client.on("messageReactionAdd", async (reaction, user) => {
 
     // DM de verificación
     try {
-      const embed = await buildVerifiedDMEmbed(guild);
-      await user.send({
-        embeds: [embed],
-        files: [GIF_PATH],
-      });
+      await sendEmbed(user, buildVerifiedDMEmbed, guild);
     } catch (dmErr) {
       console.warn(
         `⚠️ No se pudo enviar DM de verificación a ${user.tag}`,
@@ -167,11 +163,7 @@ client.on("guildMemberAdd", async (member) => {
 
   // DM bienvenida
   try {
-    const bienvenidaEmbed = await buildWelcomeDMEmbed(member.guild);
-    await member.send({
-      embeds: [bienvenidaEmbed],
-      files: [GIF_PATH],
-    });
+    await sendEmbed(member, buildWelcomeDMEmbed, member.guild);
   } catch (dmError) {
     console.warn(
       `⚠️ No se pudo enviar DM de bienvenida a ${member.user.tag}`

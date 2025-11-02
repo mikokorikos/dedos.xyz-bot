@@ -1,7 +1,6 @@
 // commands/slash.js
 // Manejo de slash commands
 import { config } from "../constants/config.js";
-import { GIF_PATH } from "../constants/ui.js";
 import { isOwner, isStaff } from "../services/permissions.js";
 import {
   publishRobuxPanel,
@@ -22,6 +21,7 @@ import {
   buildCouponsListEmbed,
 } from "../embeds/embeds.js";
 import { sendTranscriptById } from "../services/ticketService.js";
+import { sendEmbed } from "../utils/sendEmbed.js";
 
 /**
  * Limpia la lista de usuarios que se pasan al crear el cupón.
@@ -96,51 +96,60 @@ export async function handleSlashCommand(client, interaction) {
   if (commandName === "precio") {
     const robux = interaction.options.getInteger("robux", true);
     const p = getPriceForRobux(robux);
-    const embed = buildPriceQuoteEmbed({
-      mode: "robux->precio",
-      robux,
-      mxn: p.mxn,
-      usd: p.usd,
-    });
-    return interaction.reply({
-      embeds: [embed],
-      files: [GIF_PATH],
-      ephemeral: true,
-    });
+    return sendEmbed(
+      interaction,
+      buildPriceQuoteEmbed,
+      {
+        mode: "robux->precio",
+        robux,
+        mxn: p.mxn,
+        usd: p.usd,
+      },
+      {
+        method: "reply",
+        ephemeral: true,
+      }
+    );
   }
 
   // /cuanto_mxn
   if (commandName === "cuanto_mxn") {
     const cantidad = interaction.options.getNumber("cantidad", true);
     const r = getRobuxFromMxn(cantidad);
-    const embed = buildPriceQuoteEmbed({
-      mode: "mxn->robux",
-      robux: r.robux,
-      mxn: r.mxn,
-      usd: r.usd,
-    });
-    return interaction.reply({
-      embeds: [embed],
-      files: [GIF_PATH],
-      ephemeral: true,
-    });
+    return sendEmbed(
+      interaction,
+      buildPriceQuoteEmbed,
+      {
+        mode: "mxn->robux",
+        robux: r.robux,
+        mxn: r.mxn,
+        usd: r.usd,
+      },
+      {
+        method: "reply",
+        ephemeral: true,
+      }
+    );
   }
 
   // /cuanto_usd
   if (commandName === "cuanto_usd") {
     const cantidad = interaction.options.getNumber("cantidad", true);
     const r = getRobuxFromUsd(cantidad);
-    const embed = buildPriceQuoteEmbed({
-      mode: "usd->robux",
-      robux: r.robux,
-      mxn: r.mxn,
-      usd: r.usd,
-    });
-    return interaction.reply({
-      embeds: [embed],
-      files: [GIF_PATH],
-      ephemeral: true,
-    });
+    return sendEmbed(
+      interaction,
+      buildPriceQuoteEmbed,
+      {
+        mode: "usd->robux",
+        robux: r.robux,
+        mxn: r.mxn,
+        usd: r.usd,
+      },
+      {
+        method: "reply",
+        ephemeral: true,
+      }
+    );
   }
 
   // /crear-descuento
@@ -260,11 +269,15 @@ export async function handleSlashCommand(client, interaction) {
       });
     }
     const coupons = await listActiveCoupons();
-    const embed = buildCouponsListEmbed(coupons);
-    return interaction.reply({
-      embeds: [embed],
-      ephemeral: true,
-    });
+    return sendEmbed(
+      interaction,
+      buildCouponsListEmbed,
+      coupons,
+      {
+        method: "reply",
+        ephemeral: true,
+      }
+    );
   }
 
   // /transcripcion

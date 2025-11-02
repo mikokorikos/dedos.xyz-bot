@@ -13,7 +13,6 @@ import {
 } from "discord.js";
 
 import { config } from "../constants/config.js";
-import { GIF_PATH } from "../constants/ui.js";
 import { getDB } from "./db.js";
 import { isStaff } from "./permissions.js";
 import {
@@ -41,6 +40,7 @@ import {
   buildPurchaseConfirmationEmbed,
   buildPurchaseConfirmationComponents,
 } from "../embeds/embeds.js";
+import { sendEmbed } from "../utils/sendEmbed.js";
 
 /**
  * Helper para construir los botones de staff en tickets de compra
@@ -112,21 +112,19 @@ async function maybeSendFraudAlert(interaction, couponResult, context) {
     return false;
   }
 
-  const fraudEmbed = buildFraudAlertEmbed({
-    discordUserTag: context.userTag,
-    discordUserId: context.userId,
-    robloxUsername: couponResult.fraudInfo.robloxUsername,
-    couponCode: couponResult.fraudInfo.couponCode,
-    priorTicketId: couponResult.fraudInfo.priorTicketId,
-    priorBuyerDiscordId: couponResult.fraudInfo.priorBuyerDiscordId,
-    priorCreatedAt: couponResult.fraudInfo.priorCreatedAt,
-  });
-
   const fraudChan = interaction.client.channels.cache.get(
     config.STAFF_LOG_CHANNEL_ID
   );
   if (fraudChan) {
-    await fraudChan.send({ embeds: [fraudEmbed] });
+    await sendEmbed(fraudChan, buildFraudAlertEmbed, {
+      discordUserTag: context.userTag,
+      discordUserId: context.userId,
+      robloxUsername: couponResult.fraudInfo.robloxUsername,
+      couponCode: couponResult.fraudInfo.couponCode,
+      priorTicketId: couponResult.fraudInfo.priorTicketId,
+      priorBuyerDiscordId: couponResult.fraudInfo.priorBuyerDiscordId,
+      priorCreatedAt: couponResult.fraudInfo.priorCreatedAt,
+    });
   }
   return true;
 }
@@ -242,11 +240,6 @@ export async function previewPurchaseTicket(interaction, rawData) {
     couponMessage,
   };
 
-  const embed = buildPurchaseConfirmationEmbed({
-    ...summary,
-    status: "preview",
-  });
-
   const token = randomUUID();
   cleanupExpiredConfirmations();
 
@@ -263,15 +256,22 @@ export async function previewPurchaseTicket(interaction, rawData) {
     fraudReported,
   });
 
-  await interaction.reply({
-    embeds: [embed],
-    components: buildPurchaseConfirmationComponents({
-      token,
-      state: "pending",
-    }),
-    files: [GIF_PATH],
-    ephemeral: true,
-  });
+  await sendEmbed(
+    interaction,
+    buildPurchaseConfirmationEmbed,
+    {
+      ...summary,
+      status: "preview",
+    },
+    {
+      method: "reply",
+      components: buildPurchaseConfirmationComponents({
+        token,
+        state: "pending",
+      }),
+      ephemeral: true,
+    }
+  );
 }
 
 /**
@@ -396,28 +396,29 @@ export async function openPurchaseTicket(interaction, data, options = {}) {
   // Embed en el canal del ticket
   const priceNormalDisplay = formatPrice(priceBeforeMxn);
   const priceFinalDisplay = formatPrice(finalPriceMxn);
-  const purchaseEmbed = buildPurchaseTicketEmbed({
-    ticketId,
-    userTag: user.tag,
-    robloxUsername: normalizedData.robloxUsername,
-    robuxAmount: normalizedData.robuxAmount,
-    priceNormalDisplay,
-    priceFinalDisplay,
-    couponCode: effectiveCoupon ? effectiveCoupon.code : null,
-    status: "pendiente_pago",
-  });
-
   const row = buildPurchaseButtonsRow();
 
   const staffPing =
     staffRoles.map((id) => `<@&${id}>`).join(" ") || "@here";
 
-  const sentMsg = await channel.send({
-    content: `${user} | Staff: ${staffPing}`,
-    embeds: [purchaseEmbed],
-    files: [GIF_PATH],
-    components: [row],
-  });
+  const sentMsg = await sendEmbed(
+    channel,
+    buildPurchaseTicketEmbed,
+    {
+      ticketId,
+      userTag: user.tag,
+      robloxUsername: normalizedData.robloxUsername,
+      robuxAmount: normalizedData.robuxAmount,
+      priceNormalDisplay,
+      priceFinalDisplay,
+      couponCode: effectiveCoupon ? effectiveCoupon.code : null,
+      status: "pendiente_pago",
+    },
+    {
+      content: `${user} | Staff: ${staffPing}`,
+      components: [row],
+    }
+  );
 
   // Guardar status_message_id
   await updatePurchaseStatusMessageId(ticketId, sentMsg.id);
@@ -443,39 +444,19 @@ export async function openPurchaseTicket(interaction, data, options = {}) {
       ticketId,
     });
 
-    // Build embed público
-    const pubEmbed = buildCouponPublicEmbedShort({
-      discordUserTag: user.tag,
-      roblox_username: normalizedData.robloxUsername,
-      robux_amount: normalizedData.robuxAmount,
-      coupon_code: effectiveCoupon.code,
-      price_before_mxn: priceBeforeMxn,
-      price_after_mxn: finalPriceMxn,
-      coupon_meta: couponResult.meta,
-      remaining_uses_text: remainingUsesText,
-    });
-
-    const staffEmbed = buildCouponLogEmbedFull({
-      discordUserTag: user.tag,
-      roblox_username: normalizedData.robloxUsername,
-      ticket_id: ticketId,
-      robux_amount: normalizedData.robuxAmount,
-      price_before_mxn: priceBeforeMxn,
-      price_after_mxn: finalPriceMxn,
-      discount_mxn: discountMxn,
-      coupon_code: effectiveCoupon.code,
-      coupon_meta: couponResult.meta,
-      status: "pendiente_pago",
-      remaining_uses_text: remainingUsesText,
-    });
-
     const publicChan = interaction.client.channels.cache.get(
       config.PUBLIC_LOG_CHANNEL_ID
     );
     if (publicChan) {
-      await publicChan.send({
-        embeds: [pubEmbed],
-        files: [GIF_PATH],
+      await sendEmbed(publicChan, buildCouponPublicEmbedShort, {
+        discordUserTag: user.tag,
+        roblox_username: normalizedData.robloxUsername,
+        robux_amount: normalizedData.robuxAmount,
+        coupon_code: effectiveCoupon.code,
+        price_before_mxn: priceBeforeMxn,
+        price_after_mxn: finalPriceMxn,
+        coupon_meta: couponResult.meta,
+        remaining_uses_text: remainingUsesText,
       });
     }
 
@@ -483,9 +464,18 @@ export async function openPurchaseTicket(interaction, data, options = {}) {
       config.STAFF_LOG_CHANNEL_ID
     );
     if (staffChan) {
-      await staffChan.send({
-        embeds: [staffEmbed],
-        files: [GIF_PATH],
+      await sendEmbed(staffChan, buildCouponLogEmbedFull, {
+        discordUserTag: user.tag,
+        roblox_username: normalizedData.robloxUsername,
+        ticket_id: ticketId,
+        robux_amount: normalizedData.robuxAmount,
+        price_before_mxn: priceBeforeMxn,
+        price_after_mxn: finalPriceMxn,
+        discount_mxn: discountMxn,
+        coupon_code: effectiveCoupon.code,
+        coupon_meta: couponResult.meta,
+        status: "pendiente_pago",
+        remaining_uses_text: remainingUsesText,
       });
     }
   }
@@ -580,22 +570,23 @@ export async function openHelpTicket(interaction) {
     [ticketId, user.id, user.tag, channel.id]
   );
 
-  const helpEmbed = buildHelpTicketEmbed({
-    ticketId,
-    userTag: user.tag,
-  });
-
   const row = buildHelpButtonsRow();
 
   const staffPing =
     staffRoles.map((id) => `<@&${id}>`).join(" ") || "@here";
 
-  await channel.send({
-    content: `${user} | Staff: ${staffPing}`,
-    embeds: [helpEmbed],
-    files: [GIF_PATH],
-    components: [row],
-  });
+  await sendEmbed(
+    channel,
+    buildHelpTicketEmbed,
+    {
+      ticketId,
+      userTag: user.tag,
+    },
+    {
+      content: `${user} | Staff: ${staffPing}`,
+      components: [row],
+    }
+  );
 
   await interaction.reply({
     content: `✅ Ticket #${ticketId} abierto en ${channel}`,
@@ -664,7 +655,7 @@ export async function handlePurchaseStatusUpdate(interaction, newStatus) {
   const priceNormalDisplay = formatPrice(purchaseRow.price_before);
   const priceFinalDisplay = formatPrice(purchaseRow.price_after);
 
-  const embed = buildPurchaseTicketEmbed({
+  const embedData = {
     ticketId: ticket.ticket_id,
     userTag: ticket.username,
     robloxUsername: purchaseRow.roblox_username,
@@ -673,15 +664,15 @@ export async function handlePurchaseStatusUpdate(interaction, newStatus) {
     priceFinalDisplay,
     couponCode: purchaseRow.coupon_code,
     status: purchaseRow.status,
-  });
+  };
 
   // Editar el mensaje original
   try {
     const msg = await channel.messages.fetch(
       purchaseRow.status_message_id
     );
-    await msg.edit({
-      embeds: [embed],
+    await sendEmbed(msg, buildPurchaseTicketEmbed, embedData, {
+      method: "edit",
       components: [buildPurchaseButtonsRow()],
     });
   } catch (err) {
@@ -694,17 +685,16 @@ export async function handlePurchaseStatusUpdate(interaction, newStatus) {
       const buyer = await interaction.client.users.fetch(
         purchaseRow.buyer_discord_id
       );
-      const receiptEmbed = buildDeliveryReceiptEmbed({
-        ticketId: ticket.ticket_id,
-        robloxUsername: purchaseRow.roblox_username,
-        robuxAmount: purchaseRow.robux_amount,
-        finalPriceMxn: purchaseRow.price_after,
-      });
-
-      await buyer.send({
-        embeds: [receiptEmbed],
-        files: [GIF_PATH],
-      });
+      await sendEmbed(
+        buyer,
+        buildDeliveryReceiptEmbed,
+        {
+          ticketId: ticket.ticket_id,
+          robloxUsername: purchaseRow.roblox_username,
+          robuxAmount: purchaseRow.robux_amount,
+          finalPriceMxn: purchaseRow.price_after,
+        }
+      );
     } catch (dmErr) {
       console.warn(
         "❌ No se pudo mandar el recibo al comprador:",
@@ -799,7 +789,7 @@ export async function closeTicketWithTranscript(
   );
 
   // Embed de cierre dentro del canal
-  const cierreEmbed = buildTicketClosedEmbed({
+  await sendEmbed(channel, buildTicketClosedEmbed, {
     ticketId: ticket.ticket_id,
     ticketType: ticket.ticket_type,
     userTag: ticket.username,
@@ -808,28 +798,25 @@ export async function closeTicketWithTranscript(
     reason,
   });
 
-  await channel.send({
-    embeds: [cierreEmbed],
-    files: [GIF_PATH],
-  });
-
   // DM al autor original con la transcripción
   try {
     const user = await interaction.client.users.fetch(ticket.user_id);
 
-    const dmEmbed = buildTicketClosedEmbed({
-      ticketId: ticket.ticket_id,
-      ticketType: ticket.ticket_type,
-      userTag: ticket.username,
-      openedAt: ticket.opened_at,
-      closedAt: new Date(),
-      reason,
-    });
-
-    await user.send({
-      embeds: [dmEmbed],
-      files: [GIF_PATH, filePath],
-    });
+    await sendEmbed(
+      user,
+      buildTicketClosedEmbed,
+      {
+        ticketId: ticket.ticket_id,
+        ticketType: ticket.ticket_type,
+        userTag: ticket.username,
+        openedAt: ticket.opened_at,
+        closedAt: new Date(),
+        reason,
+      },
+      {
+        files: [filePath],
+      }
+    );
   } catch (dmError) {
     console.warn("❌ No se pudo enviar DM al usuario:", dmError.message);
   }
@@ -889,19 +876,21 @@ export async function sendTranscriptById(
     throw new Error("El archivo de transcripción no se encontró en el servidor.");
   }
 
-  const cierreEmbed = buildTicketClosedEmbed({
-    ticketId: ticket.ticket_id,
-    ticketType: ticket.ticket_type,
-    userTag: ticket.username,
-    openedAt: ticket.opened_at,
-    closedAt: ticket.closed_at || new Date(),
-    reason: ticket.reason || "Sin motivo especificado",
-  });
-
-  await requesterUser.send({
-    embeds: [cierreEmbed],
-    files: [filePath],
-  });
+  await sendEmbed(
+    requesterUser,
+    buildTicketClosedEmbed,
+    {
+      ticketId: ticket.ticket_id,
+      ticketType: ticket.ticket_type,
+      userTag: ticket.username,
+      openedAt: ticket.opened_at,
+      closedAt: ticket.closed_at || new Date(),
+      reason: ticket.reason || "Sin motivo especificado",
+    },
+    {
+      files: [filePath],
+    }
+  );
 
   console.log(
     `📄 ${requesterUser.tag} descargó transcripción del ticket #${ticket.ticket_id} (${ticket.ticket_type})`
