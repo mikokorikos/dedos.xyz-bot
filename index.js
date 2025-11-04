@@ -38,7 +38,11 @@ const client = new Client({
 client.once("ready", async () => {
   console.log(`✅ Bot conectado como ${client.user.tag}`);
 
-  await initDB();
+  try {
+    await initDB();
+  } catch (dbError) {
+    console.error("Error inicializando la base de datos:", dbError);
+  }
 
   // asegurar carpeta transcripts
   await fs.mkdir(config.TRANSCRIPTS_DIR, { recursive: true }).catch(() => {});

@@ -4,25 +4,75 @@ import mysql from "mysql2/promise";
 import fs from "fs/promises";
 import { config } from "../constants/config.js";
 
-let db;
+let pool;
+let dbProxy;
+let initializing = null;
 
-/**
- * initDB()
- * - Conecta a MySQL
- * - Crea / migra tablas críticas
- * - Asegura carpeta de transcripts
- */
-export async function initDB() {
-  db = await mysql.createConnection({
-    host: config.DB_HOST,
-    user: config.DB_USER,
-    password: config.DB_PASS,
-    database: config.DB_NAME,
-    port: config.DB_PORT,
-  });
+function shouldReconnect(error) {
+  if (!error) return false;
+  if (error.fatal) return true;
+  const reconnectableCodes = new Set([
+    "PROTOCOL_CONNECTION_LOST",
+    "ECONNRESET",
+    "EPIPE",
+    "PROTOCOL_ENQUEUE_AFTER_FATAL_ERROR",
+    "PROTOCOL_ENQUEUE_AFTER_QUIT",
+    "PROTOCOL_ENQUEUE_HANDSHAKE_TWICE",
+  ]);
+  if (error.code && reconnectableCodes.has(error.code)) {
+    return true;
+  }
+  const message = String(error.message || "");
+  if (message.toLowerCase().includes("closed state")) {
+    return true;
+  }
+  if (message.toLowerCase().includes("connection lost")) {
+    return true;
+  }
+  return false;
+}
 
+async function runWithRetry(method, args) {
+  let attempt = 0;
+  while (attempt < 2) {
+    try {
+      if (!pool) {
+        throw new Error("DB no inicializada.");
+      }
+      return await pool[method](...args);
+    } catch (error) {
+      if (shouldReconnect(error) && attempt === 0) {
+        console.warn("⚠️ Conexión MySQL perdida. Reintentando...", error.message);
+        try {
+          await initDB(true);
+        } catch (reconnectError) {
+          console.error("Error al intentar reconectar MySQL:", reconnectError);
+          throw reconnectError;
+        }
+        attempt += 1;
+        continue;
+      }
+      console.error("Error al ejecutar consulta MySQL:", error);
+      throw error;
+    }
+  }
+  throw new Error("No se pudo ejecutar la consulta MySQL después de reintentos.");
+}
+
+function ensureProxy() {
+  if (dbProxy) {
+    return dbProxy;
+  }
+  dbProxy = {
+    query: (...args) => runWithRetry("query", args),
+    execute: (...args) => runWithRetry("execute", args),
+  };
+  return dbProxy;
+}
+
+async function setupSchema(connection) {
   // Tabla de tickets
-  await db.query(`
+  await connection.query(`
     CREATE TABLE IF NOT EXISTS tickets (
       id INT AUTO_INCREMENT PRIMARY KEY,
       ticket_id VARCHAR(10) NOT NULL UNIQUE,
@@ -41,7 +91,7 @@ export async function initDB() {
   `);
 
   // Tabla de compras
-  await db.query(`
+  await connection.query(`
     CREATE TABLE IF NOT EXISTS purchases (
       id INT AUTO_INCREMENT PRIMARY KEY,
       ticket_id VARCHAR(10) NOT NULL,
@@ -69,7 +119,7 @@ export async function initDB() {
   `);
 
   // Tabla de cupones
-  await db.query(`
+  await connection.query(`
     CREATE TABLE IF NOT EXISTS coupons (
       code VARCHAR(50) PRIMARY KEY,
       expires_at DATETIME NULL,
@@ -95,7 +145,7 @@ export async function initDB() {
   `);
 
   // Asegurar compatibilidad con instalaciones anteriores (nuevas columnas)
-  const [perUserLimitColumn] = await db.query(
+  const [perUserLimitColumn] = await connection.query(
     "SHOW COLUMNS FROM coupons LIKE 'per_user_limit'"
   );
   if (
@@ -104,22 +154,22 @@ export async function initDB() {
     typeof perUserLimitColumn[0].Type === "string" &&
     !perUserLimitColumn[0].Type.includes("custom")
   ) {
-    await db.query(
+    await connection.query(
       "ALTER TABLE coupons MODIFY COLUMN per_user_limit ENUM('once','multi','custom') DEFAULT 'once'"
     );
   }
 
-  const [customLimitColumn] = await db.query(
+  const [customLimitColumn] = await connection.query(
     "SHOW COLUMNS FROM coupons LIKE 'per_user_limit_custom'"
   );
   if (!Array.isArray(customLimitColumn) || customLimitColumn.length === 0) {
-    await db.query(
+    await connection.query(
       "ALTER TABLE coupons ADD COLUMN per_user_limit_custom INT DEFAULT NULL"
     );
   }
 
   // Historial de uso de cupones
-  await db.query(`
+  await connection.query(`
     CREATE TABLE IF NOT EXISTS coupon_usage (
       id INT AUTO_INCREMENT PRIMARY KEY,
       coupon_code VARCHAR(50) NOT NULL,
@@ -132,14 +182,74 @@ export async function initDB() {
       INDEX idx_discord_user (discord_user_id)
     );
   `);
+}
 
-  // Asegurar carpeta transcripts
+async function createPool() {
+  const newPool = mysql.createPool({
+    host: config.DB_HOST,
+    user: config.DB_USER,
+    password: config.DB_PASS,
+    database: config.DB_NAME,
+    port: config.DB_PORT,
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+  });
+
+  newPool.on("error", (error) => {
+    console.error("Error en el pool de MySQL:", error);
+  });
+
+  const connection = await newPool.getConnection();
+  try {
+    await setupSchema(connection);
+  } finally {
+    connection.release();
+  }
+
   await fs.mkdir(config.TRANSCRIPTS_DIR, { recursive: true });
 
   console.log("✅ DB conectada y tablas listas.");
+
+  return newPool;
+}
+
+/**
+ * initDB()
+ * - Conecta a MySQL con pool de conexiones
+ * - Crea / migra tablas críticas
+ * - Asegura carpeta de transcripts
+ */
+export async function initDB(force = false) {
+  if (!force && dbProxy) {
+    return dbProxy;
+  }
+
+  if (initializing) {
+    return initializing;
+  }
+
+  initializing = (async () => {
+    if (pool) {
+      await pool.end().catch(() => {});
+      pool = null;
+    }
+
+    pool = await createPool();
+    const proxy = ensureProxy();
+    return proxy;
+  })();
+
+  try {
+    return await initializing;
+  } finally {
+    initializing = null;
+  }
 }
 
 export function getDB() {
-  if (!db) throw new Error("DB not initialized yet.");
-  return db;
+  if (!dbProxy) {
+    throw new Error("DB not initialized yet.");
+  }
+  return dbProxy;
 }
